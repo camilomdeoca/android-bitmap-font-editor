@@ -1,1 +1,8 @@
+ignoredBuiltDependencies:
+  - bdfparser
+
 nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - bdfparser
+  - unrs-resolver
