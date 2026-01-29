@@ -7,6 +7,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Font } from "@/lib/bdfparser";
 import { useShallow } from "zustand/shallow";
 import { glyph, serializeToBDF } from "@/lib/bdfparser/bdfparser";
+import { useState } from "react";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -25,33 +26,33 @@ export default function FontEditor() {
   const backgroundColorHover = useThemeColor({}, "backgroundHover");
   const backgroundColorActive = useThemeColor({}, "backgroundActive");
   const borderColor = useThemeColor({}, "borderDefault");
+  
+  const [currentCharacter, setCurrentCharacter ] = useState("A");
 
   const {
     font,
     char,
   } = useFontStore(useShallow(state => {
-    const b = state.font && glyph(state.font, "a");
-    if (state.font !== undefined && b === undefined) throw new Error(`Font does not have char: "a"`);
+    const b = state.font && glyph(state.font, currentCharacter);
+    if (state.font !== undefined && b === undefined) {
+      throw new Error(`Font does not have char: "${currentCharacter}"`);
+    }
     return {
       font: state.font,
-      char: state.font && glyph(state.font, "a"),
+      char: state.font && glyph(state.font, currentCharacter),
     };
   }));
   const setFont = useFontStore(state => state.setFont);
 
   const handleCharChange = (hexdata: string[]) => {
     if (!char || !font) return;
-    const ret = "a".codePointAt(0);
+    const ret = currentCharacter.codePointAt(0);
     if (ret === undefined) throw new Error(`Invalid character.`);
     const b = font.glyphs.get(ret);
     if (!b) throw new Error(`Font does not have char: ...`);
     b.hexdata = hexdata;
 
-    const newFont = Object.assign(
-      Object.create(Object.getPrototypeOf(font)),
-      font
-    );
-    setFont(newFont);
+    setFont({ ...font });
   };
 
   return (
@@ -59,11 +60,14 @@ export default function FontEditor() {
       style={{
         backgroundColor,
         flex: 1,
+        flexDirection: "column",
         padding: 20,
         gap: 10,
       }}
     >
-      {char && <CharacterEditor char={char.hexdata} width={char.bbw} onChange={handleCharChange} />}
+      <View style={{ flex: 1 }}>
+        {char && <CharacterEditor char={char.hexdata} width={char.bbw} onChange={handleCharChange} />}
+      </View>
       <Pressable
         style={({ pressed, hovered }) => ({
           borderWidth: 1,

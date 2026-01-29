@@ -21,7 +21,17 @@ export function CharacterEditor({
     <View
       style={{
         width: "100%",
+        height: "100%",
+      }}
+    >
+    <View
+      style={{
         flexDirection: "column",
+        flexGrow: 1,
+        maxWidth: "100%",
+        maxHeight: "100%",
+        aspectRatio: width / char.length,
+        margin: "auto",
       }}
       onStartShouldSetResponder={() => true}
       onLayout={(e) => {
@@ -32,6 +42,9 @@ export function CharacterEditor({
       onResponderStart={ev => {
         const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
         const y = Math.floor(ev.nativeEvent.locationY * char.length / sizeRef.current.height);
+        
+        if (x < 0 || x >= width) return;
+        if (y < 0 || y >= char.length) return;
 
         console.log(ev.nativeEvent.locationX, ev.nativeEvent.locationY);
         console.log(x, y);
@@ -61,10 +74,14 @@ export function CharacterEditor({
         const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
         const y = Math.floor(ev.nativeEvent.locationY * char.length / sizeRef.current.height);
 
+        if (x < 0 || x > sizeRef.current.width) return;
+        if (y < 0 || y > sizeRef.current.height) return;
+
         console.log(ev.nativeEvent.locationX, ev.nativeEvent.locationY);
         console.log(x, y);
 
         const rowInHex = char[y];
+        if (rowInHex === undefined) console.warn("char =", char);
         
         const rowInBinary = parseInt(rowInHex, 16) // Convert to number
           .toString(2) // Convert to string of binary number
@@ -94,7 +111,10 @@ export function CharacterEditor({
         return <View
           key={y}
           pointerEvents="none"
-          style={{ flexDirection: "row" }}
+          style={{
+            flexDirection: "row",
+            flex: 1,
+          }}
         >
           {rowInBinary.substring(0, width) // Remove extra characters in the right
             .split("").map((state, x) => (
@@ -113,6 +133,7 @@ export function CharacterEditor({
           ))}
         </View>;
       })}
+    </View>
     </View>
   );
 }
