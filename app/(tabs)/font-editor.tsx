@@ -122,6 +122,7 @@ export default function FontEditor() {
             };
 
             font.glyphs.set(codePoint, glyph);
+            setFont({ ...font });
           }}
         >
           <IconSymbol name="plus" color={color} size={28} />
@@ -130,7 +131,7 @@ export default function FontEditor() {
       <View style={{ flex: 1 }}>
         {char && <CharacterEditor bitmap={char.bitmap} onChange={handleCharChange} />}
       </View>
-      {font && <View style={{ flexDirection: "row" }}>
+      {font && <View style={{ flexDirection: "row", gap: 10 }}>
         <ButtonContainer onPress={() => setGlyphSettingsOpen(true)}>
           <IconSymbol name="gear" color={color} size={28} />
         </ButtonContainer>
@@ -152,6 +153,7 @@ export default function FontEditor() {
             borderColor,
             padding: 10,
             position: "absolute",
+            gap: 10,
           }}>
             <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
             <ButtonContainer

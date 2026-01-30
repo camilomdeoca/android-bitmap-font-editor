@@ -44,7 +44,7 @@ export default function ProjectsListScreen() {
   };
 
   return (
-    <ScrollView style={{ height: "100%" }}>
+    <ScrollView style={{ height: "100%", backgroundColor }}>
       <View
         style={{
           backgroundColor,
