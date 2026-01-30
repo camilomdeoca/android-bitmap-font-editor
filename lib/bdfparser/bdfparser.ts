@@ -50,7 +50,7 @@ export type Glyph = {
   dwy1?: number,
   vvectorx?: number,
   vvectory?: number,
-  hexdata: string[],
+  bitmap: boolean[][],
 }
 
 export type CodepointRangeType = number | [number, number] | [number, number][]
@@ -274,6 +274,51 @@ async function __parse_glyph_count(font: Partial<Font>, parseCtx: ParseCtx): Pro
   await __prepare_glyphs(font, parseCtx);
 }
 
+function hexdata2bools(hexdata: string[], width: number): boolean[][] {
+  return hexdata.map(rowInHex => {
+    let bits = [];
+    
+    let rowInt = BigInt("0x" + rowInHex);
+    while (rowInt > 0n) {
+      bits.push((rowInt & 1n) === 1n);
+      rowInt >>= 1n;
+    }
+
+    // pad left with zeros to multiple of 8
+    // (left of number written left to right not like they are arranged in the bits array)
+    bits.push(...Array<boolean>(rowInHex.length*4 - bits.length).fill(false));
+
+    // We were pushing to the end so the most significant significant bit is in the end
+    bits.reverse();
+
+    // Remove extra from right
+    bits.splice(width);
+
+    return bits;
+  });
+}
+
+function bools2hexdata(bitmap: boolean[][]): string[] {
+  return bitmap.map(bits => {
+    let n = 0n;
+    for (const bit of bits) {
+      n <<= 1n;
+      if (bit) n |= 1n;
+    }
+
+    // pad with zeros on the right
+    const remainder = bits.length % 8;
+    if (remainder !== 0) {
+      n <<= 8n - BigInt(remainder);
+    }
+
+    return n
+      .toString(16)
+      .padStart(Math.floor((bits.length + 7) / 8) * 2, "0") // Has to be left padded with zeros
+      .toUpperCase(); // All fonts use uppercase, i dont know if its mandatory
+  });
+}
+
 async function __prepare_glyphs(font: Partial<Font>, parseCtx: ParseCtx): Promise<void> {
   font.glyphs = new Map();
   let glyphCodepoint = 0;
@@ -353,7 +398,8 @@ async function __prepare_glyphs(font: Partial<Font>, parseCtx: ParseCtx): Promis
             break;
           case 'ENDCHAR':
             glyphBitmapIsOn = false;
-            partialGlyph.hexdata = glyphBitmap;
+            if (!partialGlyph.bbw) throw new Error("Glyph width should be already defined.");
+            partialGlyph.bitmap = hexdata2bools(glyphBitmap, partialGlyph.bbw);
             // TODO: verify every required field of partialGlyph
             font.glyphs.set(glyphCodepoint, partialGlyph as Glyph);
             glyphEnd = true;
@@ -484,7 +530,7 @@ export function serializeToBDF(font: Font): string {
       dwy1,
       vvectorx,
       vvectory,
-      hexdata,
+      bitmap: hexdata,
     } = g;
 
     lines.push(`STARTCHAR ${glyphname}`);
@@ -500,7 +546,7 @@ export function serializeToBDF(font: Font): string {
     if (vvectorx != null && vvectory != null) lines.push(`VVECTOR ${vvectorx} ${vvectory}`);
 
     lines.push('BITMAP');
-    for (const row of hexdata) lines.push(row);
+    for (const row of bools2hexdata(hexdata)) lines.push(row);
     lines.push('ENDCHAR');
   });
 

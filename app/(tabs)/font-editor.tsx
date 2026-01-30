@@ -44,13 +44,13 @@ export default function FontEditor() {
   }));
   const setFont = useFontStore(state => state.setFont);
 
-  const handleCharChange = (hexdata: string[]) => {
+  const handleCharChange = (bitmap: boolean[][]) => {
     if (!char || !font) return;
     const ret = currentCharacter.codePointAt(0);
     if (ret === undefined) throw new Error(`Invalid character.`);
     const b = font.glyphs.get(ret);
     if (!b) throw new Error(`Font does not have char: ...`);
-    b.hexdata = hexdata;
+    b.bitmap = bitmap;
 
     setFont({ ...font });
   };
@@ -66,7 +66,7 @@ export default function FontEditor() {
       }}
     >
       <View style={{ flex: 1 }}>
-        {char && <CharacterEditor char={char.hexdata} width={char.bbw} onChange={handleCharChange} />}
+        {char && <CharacterEditor bitmap={char.bitmap} onChange={handleCharChange} />}
       </View>
       <Pressable
         style={({ pressed, hovered }) => ({
