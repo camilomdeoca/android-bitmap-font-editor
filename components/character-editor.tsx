@@ -62,8 +62,8 @@ export function CharacterEditor({
         const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
         const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
 
-        if (x < 0 || x > sizeRef.current.width) return;
-        if (y < 0 || y > sizeRef.current.height) return;
+        if (x < 0 || x >= width) return;
+        if (y < 0 || y >= height) return;
 
         console.log(ev.nativeEvent.locationX, ev.nativeEvent.locationY);
         console.log(x, y);
