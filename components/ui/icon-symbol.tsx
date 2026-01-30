@@ -21,7 +21,9 @@ const MAPPING = {
   "list.bullet": "list",
   "pencil": "edit",
   "plus": "add",
+  "minus": "remove",
   "square.and.arrow.down": "save",
+  "gear": "settings",
 } as IconMapping;
 
 /**

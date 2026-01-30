@@ -1,4 +1,4 @@
-import { Button, Pressable, TextInput, View } from "react-native";
+import { Button, Modal, Pressable, TextInput, View } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -8,6 +8,7 @@ import { Font } from "@/lib/bdfparser";
 import { useShallow } from "zustand/shallow";
 import { Glyph, serializeToBDF } from "@/lib/bdfparser/bdfparser";
 import { useState } from "react";
+import { ThemedText } from "@/components/themed-text";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -26,13 +27,17 @@ export default function FontEditor() {
   const backgroundColorHover = useThemeColor({}, "backgroundHover");
   const backgroundColorActive = useThemeColor({}, "backgroundActive");
   const borderColor = useThemeColor({}, "borderDefault");
+
+  const [glyphSettingsOpen, setGlyphSettingsOpen] = useState(false);
   
   const [charInputText, setCharInputText] = useState("");
   const [codePoint, setCodePoint] = useState<number | undefined>(undefined);
   const [codePointInputText, setCodePointInputText] = useState("");
 
   const { font, char } = useFontStore(useShallow(state => {
-    const char = state.font && codePoint && state.font.glyphs.get(codePoint);
+    const char = state.font && codePoint !== undefined
+      ? state.font.glyphs.get(codePoint)
+      : undefined;
     // if (state.font !== undefined && b === undefined) {
     //   throw new Error(`Font does not have char: "${charInputText}"`);
     // }
@@ -73,8 +78,8 @@ export default function FontEditor() {
             borderRadius: 10,
           }}
           value={charInputText}
-          onChangeText={newCurrentCharacter => {
-            const newChar = newCurrentCharacter[newCurrentCharacter.length - 1];
+          onChangeText={value => {
+            const newChar = value.length > 0 ? value[value.length - 1] : value;
             setCharInputText(newChar);
             const newCodePoint = newChar.codePointAt(0);
             if (newCodePoint !== undefined) {
@@ -144,6 +149,19 @@ export default function FontEditor() {
             padding: 10,
             alignItems: "center",
           })}
+          onPress={() => setGlyphSettingsOpen(true)}
+        >
+          <IconSymbol name="gear" color={color} size={28} />
+        </Pressable>
+        <Pressable
+          style={({ pressed, hovered }) => ({
+            borderWidth: 1,
+            borderRadius: 10,
+            borderColor,
+            backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
+            padding: 10,
+            alignItems: "center",
+          })}
           onPress={() => {
             if (!font) return;
             saveFontToFile(font);
@@ -152,6 +170,69 @@ export default function FontEditor() {
           <IconSymbol name="square.and.arrow.down" color={color} size={28} />
         </Pressable>
       </View>
+      {font && codePoint && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>
+        <View style={{ flex: 1, flexDirection: "column" }}>
+          <Pressable
+            style={{
+              flexGrow: 1,
+            }}
+            onPress={() => setGlyphSettingsOpen(false)}
+          >
+          </Pressable>
+          <View style={{
+            flexDirection: "row",
+            backgroundColor,
+            width: "100%",
+            bottom: 0,
+            borderTopRightRadius: 10,
+            borderTopLeftRadius: 10,
+            borderWidth: 1,
+            borderColor,
+            padding: 10,
+            position: "absolute",
+          }}>
+            <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
+            <Pressable
+              style={({ pressed, hovered }) => ({
+                borderWidth: 1,
+                borderRadius: 10,
+                borderColor,
+                backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
+                padding: 10,
+                alignItems: "center",
+              })}
+              onPress={() => {
+                char.bbw -= 1;
+                char.bitmap = [...char.bitmap];
+                char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
+                font.glyphs.set(codePoint, {...char})
+                setFont({ ...font });
+              }}
+            >
+              <IconSymbol name="minus" color={color} size={28} />
+            </Pressable>
+            <Pressable
+              style={({ pressed, hovered }) => ({
+                borderWidth: 1,
+                borderRadius: 10,
+                borderColor,
+                backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
+                padding: 10,
+                alignItems: "center",
+              })}
+              onPress={() => {
+                char.bbw += 1;
+                char.bitmap = [...char.bitmap];
+                char.bitmap = char.bitmap.map(row => [...row, false]);
+                font.glyphs.set(codePoint, {...char})
+                setFont({ ...font });
+              }}
+            >
+              <IconSymbol name="plus" color={color} size={28} />
+            </Pressable>
+          </View>
+        </View>
+      </Modal>}
     </View>
   );
 }
