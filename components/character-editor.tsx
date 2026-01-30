@@ -25,76 +25,75 @@ export function CharacterEditor({
         height: "100%",
       }}
     >
-    <View
-      style={{
-        flexDirection: "column",
-        flexGrow: 1,
-        maxWidth: "100%",
-        maxHeight: "100%",
-        aspectRatio: width / height,
-        margin: "auto",
-      }}
-      onStartShouldSetResponder={() => true}
-      onLayout={(e) => {
-        sizeRef.current.width = e.nativeEvent.layout.width;
-        sizeRef.current.height = e.nativeEvent.layout.height;
-        console.log(e.nativeEvent.layout);
-      }}
-      onResponderStart={ev => {
-        const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
-        const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
-        
-        if (x < 0 || x >= width) return;
-        if (y < 0 || y >= height) return;
-        
-        startingPixelStateRef.current = bitmap[y][x];
+      <View
+        style={{
+          flexDirection: "column",
+          maxWidth: "100%",
+          maxHeight: "100%",
+          aspectRatio: width / height,
+          margin: "auto",
+        }}
+        onStartShouldSetResponder={() => true}
+        onLayout={(e) => {
+          sizeRef.current.width = e.nativeEvent.layout.width;
+          sizeRef.current.height = e.nativeEvent.layout.height;
+          console.log(e.nativeEvent.layout);
+        }}
+        onResponderStart={ev => {
+          const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
+          const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
+          
+          if (x < 0 || x >= width) return;
+          if (y < 0 || y >= height) return;
+          
+          startingPixelStateRef.current = bitmap[y][x];
 
-        const newBitmap = [...bitmap];
-        newBitmap[y] = [...newBitmap[y]];
-        newBitmap[y][x] = !startingPixelStateRef.current;
+          const newBitmap = [...bitmap];
+          newBitmap[y] = [...newBitmap[y]];
+          newBitmap[y][x] = !startingPixelStateRef.current;
 
-        onChange(newBitmap);
-      }}
-      onResponderMove={ev => {
-        const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
-        const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
+          onChange(newBitmap);
+        }}
+        onResponderMove={ev => {
+          const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
+          const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
 
-        if (x < 0 || x >= width) return;
-        if (y < 0 || y >= height) return;
+          if (x < 0 || x >= width) return;
+          if (y < 0 || y >= height) return;
 
-        const newBitmap = [...bitmap];
-        newBitmap[y] = [...newBitmap[y]];
-        newBitmap[y][x] = !startingPixelStateRef.current;
+          const newBitmap = [...bitmap];
+          newBitmap[y] = [...newBitmap[y]];
+          newBitmap[y][x] = !startingPixelStateRef.current;
 
-        onChange(newBitmap);
-      }}
-    >
-      {bitmap.map((row, y) => (
-        <View
-          key={y}
-          pointerEvents="none"
-          style={{
-            flexDirection: "row",
-            flex: 1,
-          }}
-        >
-          {row.map((state, x) => (
-            <View
-              key={x}
-              pointerEvents="none"
-              style={{
-                backgroundColor: state ? "#ffffff" : "black",
-                flex: 1,
-                aspectRatio: 1,
-                borderColor,
-                borderWidth: 1,
-              }}
-            >
-            </View>
-          ))}
-        </View>
-      ))}
-    </View>
+          onChange(newBitmap);
+        }}
+      >
+        {bitmap.map((row, y) => (
+          <View
+            key={y}
+            pointerEvents="none"
+            style={{
+              flexDirection: "row",
+              flex: 1,
+            }}
+          >
+            {row.map((state, x) => (
+              <View
+                key={x}
+                pointerEvents="none"
+                style={{
+                  backgroundColor: state ? "#ffffff" : "black",
+                  flex: 1,
+                  aspectRatio: 1,
+                  borderColor,
+                  borderWidth: 1,
+                }}
+              >
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
