@@ -1,4 +1,4 @@
-import { Pressable, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -6,7 +6,7 @@ import { useFontStore } from "@/hooks/use-font-store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Font } from "@/lib/bdfparser";
 import { useShallow } from "zustand/shallow";
-import { glyph, serializeToBDF } from "@/lib/bdfparser/bdfparser";
+import { glyphbycp, serializeToBDF } from "@/lib/bdfparser/bdfparser";
 import { useState } from "react";
 
 /// Has to be called from a click
@@ -27,28 +27,30 @@ export default function FontEditor() {
   const backgroundColorActive = useThemeColor({}, "backgroundActive");
   const borderColor = useThemeColor({}, "borderDefault");
   
-  const [currentCharacter, setCurrentCharacter ] = useState("A");
+  const [charInputText, setCharInputText] = useState("A");
+  const [codePoint, setCodePoint] = useState(() => {
+    const codePoint = charInputText.codePointAt(0);
+    if (!codePoint) throw new Error(`Invalid default char ${charInputText}`);
+    return codePoint;
+  });
+  const [codePointInputText, setCodePointInputText] = useState(codePoint.toString(16));
 
-  const {
-    font,
-    char,
-  } = useFontStore(useShallow(state => {
-    const b = state.font && glyph(state.font, currentCharacter);
+  const { font, char } = useFontStore(useShallow(state => {
+    const b = state.font && glyphbycp(state.font, codePoint);
     if (state.font !== undefined && b === undefined) {
-      throw new Error(`Font does not have char: "${currentCharacter}"`);
+      throw new Error(`Font does not have char: "${charInputText}"`);
     }
     return {
       font: state.font,
-      char: state.font && glyph(state.font, currentCharacter),
+      char: b,
     };
   }));
+
   const setFont = useFontStore(state => state.setFont);
 
   const handleCharChange = (bitmap: boolean[][]) => {
     if (!char || !font) return;
-    const ret = currentCharacter.codePointAt(0);
-    if (ret === undefined) throw new Error(`Invalid character.`);
-    const b = font.glyphs.get(ret);
+    const b = font.glyphs.get(codePoint);
     if (!b) throw new Error(`Font does not have char: ...`);
     b.bitmap = bitmap;
 
@@ -65,6 +67,48 @@ export default function FontEditor() {
         gap: 10,
       }}
     >
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <TextInput
+          style={{
+            flex: 1,
+            color,
+            borderColor,
+            borderWidth: 1,
+            borderRadius: 10,
+          }}
+          value={charInputText}
+          onChangeText={newCurrentCharacter => {
+            const newChar = newCurrentCharacter[newCurrentCharacter.length - 1];
+            setCharInputText(newChar);
+            const newCodePoint = newChar.codePointAt(0);
+            if (newCodePoint !== undefined && font?.glyphs.has(newCodePoint)) {
+              setCodePoint(newCodePoint);
+              setCodePointInputText(newCodePoint.toString(16));
+            }
+          }}
+        />
+        <TextInput
+          style={{
+            flex: 1,
+            color,
+            borderColor,
+            borderWidth: 1,
+            borderRadius: 10,
+          }}
+          value={codePointInputText}
+          onChangeText={value => {
+            if (!/^[0-9A-Fa-f]{0,8}$/.test(value)) return;
+            setCodePointInputText(value.toLowerCase());
+
+            const newCodePoint = parseInt(value, 16);
+            // If new value is valid codepoint update other inputs and codepoint
+            if (font?.glyphs.has(newCodePoint)) {
+              setCodePoint(newCodePoint);
+              setCharInputText(String.fromCodePoint(newCodePoint))
+            }
+          }}
+        />
+      </View>
       <View style={{ flex: 1 }}>
         {char && <CharacterEditor bitmap={char.bitmap} onChange={handleCharChange} />}
       </View>
