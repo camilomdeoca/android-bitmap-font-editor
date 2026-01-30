@@ -46,9 +46,6 @@ export function CharacterEditor({
         
         if (x < 0 || x >= width) return;
         if (y < 0 || y >= height) return;
-
-        console.log(ev.nativeEvent.locationX, ev.nativeEvent.locationY);
-        console.log(x, y);
         
         startingPixelStateRef.current = bitmap[y][x];
 
@@ -64,9 +61,6 @@ export function CharacterEditor({
 
         if (x < 0 || x >= width) return;
         if (y < 0 || y >= height) return;
-
-        console.log(ev.nativeEvent.locationX, ev.nativeEvent.locationY);
-        console.log(x, y);
 
         const newBitmap = [...bitmap];
         newBitmap[y] = [...newBitmap[y]];
