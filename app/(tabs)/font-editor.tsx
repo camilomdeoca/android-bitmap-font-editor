@@ -1,4 +1,4 @@
-import { Button, Modal, Pressable, TextInput, View } from "react-native";
+import { Modal, Pressable, TextInput, View } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -9,6 +9,7 @@ import { useShallow } from "zustand/shallow";
 import { Glyph, serializeToBDF } from "@/lib/bdfparser/bdfparser";
 import { useState } from "react";
 import { ThemedText } from "@/components/themed-text";
+import { ButtonContainer } from "@/components/ui/button-container";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -24,8 +25,6 @@ function saveFontToFile(font: Font) {
 export default function FontEditor() {
   const color = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
-  const backgroundColorHover = useThemeColor({}, "backgroundHover");
-  const backgroundColorActive = useThemeColor({}, "backgroundActive");
   const borderColor = useThemeColor({}, "borderDefault");
 
   const [glyphSettingsOpen, setGlyphSettingsOpen] = useState(false);
@@ -106,15 +105,7 @@ export default function FontEditor() {
             setCharInputText(newCodePoint === undefined ? "" : String.fromCodePoint(newCodePoint))
           }}
         />
-        <Pressable
-          style={({ pressed, hovered }) => ({
-            borderWidth: 1,
-            borderRadius: 10,
-            borderColor,
-            backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
-            padding: 10,
-            alignItems: "center",
-          })}
+        <ButtonContainer
           disabled={codePoint === undefined || (font && font.glyphs.has(codePoint))}
           onPress={() => {
             if (!codePoint) throw new Error("Button should be disabled if no code point");
@@ -134,51 +125,22 @@ export default function FontEditor() {
           }}
         >
           <IconSymbol name="plus" color={color} size={28} />
-        </Pressable>
+        </ButtonContainer>
       </View>
       <View style={{ flex: 1 }}>
         {char && <CharacterEditor bitmap={char.bitmap} onChange={handleCharChange} />}
       </View>
-      <View style={{ flexDirection: "row" }}>
-        <Pressable
-          style={({ pressed, hovered }) => ({
-            borderWidth: 1,
-            borderRadius: 10,
-            borderColor,
-            backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
-            padding: 10,
-            alignItems: "center",
-          })}
-          onPress={() => setGlyphSettingsOpen(true)}
-        >
+      {font && <View style={{ flexDirection: "row" }}>
+        <ButtonContainer onPress={() => setGlyphSettingsOpen(true)}>
           <IconSymbol name="gear" color={color} size={28} />
-        </Pressable>
-        <Pressable
-          style={({ pressed, hovered }) => ({
-            borderWidth: 1,
-            borderRadius: 10,
-            borderColor,
-            backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
-            padding: 10,
-            alignItems: "center",
-          })}
-          onPress={() => {
-            if (!font) return;
-            saveFontToFile(font);
-          }}
-        >
+        </ButtonContainer>
+        <ButtonContainer onPress={() => saveFontToFile(font)}>
           <IconSymbol name="square.and.arrow.down" color={color} size={28} />
-        </Pressable>
-      </View>
+        </ButtonContainer>
+      </View>}
       {font && codePoint && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>
         <View style={{ flex: 1, flexDirection: "column" }}>
-          <Pressable
-            style={{
-              flexGrow: 1,
-            }}
-            onPress={() => setGlyphSettingsOpen(false)}
-          >
-          </Pressable>
+          <Pressable style={{ flexGrow: 1 }} onPress={() => setGlyphSettingsOpen(false)} />
           <View style={{
             flexDirection: "row",
             backgroundColor,
@@ -192,15 +154,7 @@ export default function FontEditor() {
             position: "absolute",
           }}>
             <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
-            <Pressable
-              style={({ pressed, hovered }) => ({
-                borderWidth: 1,
-                borderRadius: 10,
-                borderColor,
-                backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
-                padding: 10,
-                alignItems: "center",
-              })}
+            <ButtonContainer
               onPress={() => {
                 char.bbw -= 1;
                 char.bitmap = [...char.bitmap];
@@ -210,16 +164,8 @@ export default function FontEditor() {
               }}
             >
               <IconSymbol name="minus" color={color} size={28} />
-            </Pressable>
-            <Pressable
-              style={({ pressed, hovered }) => ({
-                borderWidth: 1,
-                borderRadius: 10,
-                borderColor,
-                backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
-                padding: 10,
-                alignItems: "center",
-              })}
+            </ButtonContainer>
+            <ButtonContainer
               onPress={() => {
                 char.bbw += 1;
                 char.bitmap = [...char.bitmap];
@@ -229,7 +175,7 @@ export default function FontEditor() {
               }}
             >
               <IconSymbol name="plus" color={color} size={28} />
-            </Pressable>
+            </ButtonContainer>
           </View>
         </View>
       </Modal>}

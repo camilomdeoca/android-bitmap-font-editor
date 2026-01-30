@@ -9,6 +9,7 @@ import * as DocumentPicker from "expo-document-picker"
 import { Font, load_font } from "@/lib/bdfparser";
 import { useState } from "react";
 import { useFontStore } from "@/hooks/use-font-store";
+import { ButtonContainer } from "@/components/ui/button-container";
 
 async function* linesFromString(text: string) {
   const lines = text.split(/\r?\n/)
@@ -20,9 +21,6 @@ async function* linesFromString(text: string) {
 export default function ProjectsListScreen() {
   const color = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
-  const backgroundColorHover = useThemeColor({}, "backgroundHover");
-  const backgroundColorActive = useThemeColor({}, "backgroundActive");
-  const borderColor = useThemeColor({}, "borderDefault");
 
   const [fonts, setFonts] = useState<Font[]>([]);
 
@@ -56,36 +54,16 @@ export default function ProjectsListScreen() {
           height: "100%",
         }}
       >
-        {fonts.map((font, i) => <Pressable
-          key={i}
-          onPress={() => setFont(font)}
-          style={({ pressed, hovered }) => ({
-            borderWidth: 1,
-            borderRadius: 10,
-            borderColor,
-            backgroundColor: pressed ? backgroundColorActive : hovered ? backgroundColorHover : backgroundColor,
-            padding: 10,
-          })}
-        >
+        {fonts.map((font, i) => <ButtonContainer key={i} onPress={() => setFont(font)}>
           <ThemedText style={{ color }} >{font.headers.fontname}</ThemedText>
           <ThemedText style={styles.fontPreview} numberOfLines={1}>
             The quick brown fox jumps over the lazy dog
           </ThemedText>
-        </Pressable>)}
+        </ButtonContainer>)}
 
-        <Pressable
-          style={({ pressed, hovered }) => ({
-            borderWidth: 1,
-            borderRadius: 10,
-            borderColor,
-            backgroundColor: pressed ? Colors.dark.backgroundActive : hovered ? backgroundColorHover : backgroundColor,
-            padding: 10,
-            alignItems: "center",
-          })}
-          onPress={handleImportFont}
-        >
+        <ButtonContainer onPress={handleImportFont}>
           <IconSymbol name="plus" color={color} />
-        </Pressable>
+        </ButtonContainer>
       </View>
     </ScrollView>
   );
