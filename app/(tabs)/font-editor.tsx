@@ -1,4 +1,4 @@
-import { Modal, Pressable, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, TextInput, View } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -11,15 +11,36 @@ import { useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ButtonContainer } from "@/components/ui/button-container";
 
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
-  const blob = new Blob([serializeToBDF(font)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
+  const filename = `${font.props.get("family_name") || "font"}.bdf`;
+  const content = serializeToBDF(font);
 
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${font.props.get("family_name") || "font"}.bdf`
-  link.click();
+  if (Platform.OS === "web") {
+    const blob = new Blob([content], { type: "application/x-font-bdf" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  } else {
+    (async () => {
+      const file = new File(Paths.cache, filename);
+      file.write(content);
+
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'text/plain', // standard MIME type for text
+        dialogTitle: 'Save your text file', // Android only
+        UTI: 'public.plain-text', // iOS only (helps suggest "text" apps)
+      });
+    })();
+  }
 }
 
 export default function FontEditor() {

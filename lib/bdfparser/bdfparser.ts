@@ -475,7 +475,7 @@ export function serializeToBDF(font: Font): string {
   }
 
   // ---- Properties ----
-  lines.push(`STARTPROPERTIES ${Object.keys(font.props).length}`)
+  lines.push(`STARTPROPERTIES ${font.props.size}`)
 
   const integerProperties = new Set([
     'pixel_size',
@@ -492,7 +492,7 @@ export function serializeToBDF(font: Font): string {
     'default_char',
   ])
 
-  for (const [k, v] of Object.entries(font.props)) {
+  for (const [k, v] of font.props.entries()) {
     if (k === 'comment' && Array.isArray(v)) {
       for (const c of v) lines.push(`COMMENT "${c}"`)
     } else if (v === null) {
@@ -511,8 +511,10 @@ export function serializeToBDF(font: Font): string {
   // ---- Glyph count ----
   lines.push(`CHARS ${font.glyphs.size}`)
 
+  console.log(font.glyphs.size);
+
   // ---- Glyphs ----
-  font.glyphs.values().forEach(g => {
+  for (const g of font.glyphs.values()) {
     const {
       glyphname,
       codepoint,
@@ -548,7 +550,7 @@ export function serializeToBDF(font: Font): string {
     lines.push('BITMAP');
     for (const row of bools2hexdata(hexdata)) lines.push(row);
     lines.push('ENDCHAR');
-  });
+  }
 
   lines.push('ENDFONT');
 
