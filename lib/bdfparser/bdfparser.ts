@@ -59,6 +59,13 @@ export type GlyphDrawModeType = -1 | 0 | 1 | 2
 
 const PATTERN_VVECTOR_DELIMITER = '[\\s]+'
 
+export type SerializableFont = {
+  headers: Headers,
+  props: [string, string | null][],
+  propsComments: string[],
+  glyphs: [number, Glyph][],
+};
+
 export type Font = {
   headers: Headers,
   props: Map<string, string | null>,
@@ -72,6 +79,25 @@ type ParseCtx = {
   curline_chars: string | null,
   lines: AsyncIterableIterator<string>,
 };
+
+export function font2serializable(font: Font): SerializableFont {
+  console.log(font);
+  return {
+    headers: font.headers,
+    props: [...font.props.entries()],
+    propsComments: font.propsComments,
+    glyphs: [...font.glyphs.entries()],
+  };
+}
+
+export function serializable2font(serializableFont: SerializableFont): Font {
+  return {
+    headers: serializableFont.headers,
+    props: new Map(serializableFont.props),
+    propsComments: serializableFont.propsComments,
+    glyphs: new Map(serializableFont.glyphs),
+  };
+}
 
 
 /**
