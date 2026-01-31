@@ -487,6 +487,7 @@ export function serializeToBDF(font: Font): string {
     'underline_thickness',
     'cap_height',
     'x_height',
+    'min_space',
     'font_ascent',
     'font_descent',
     'default_char',
