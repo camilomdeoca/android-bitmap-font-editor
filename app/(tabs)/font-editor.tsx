@@ -68,14 +68,14 @@ export default function FontEditor() {
   }));
 
   const setFont = useFontStore(state => state.setFont);
+  const updateCharacter = useFontStore(state => state.updateCharacter);
 
   const handleCharChange = (bitmap: boolean[][]) => {
     if (!char || !font || !codePoint) return;
-    const b = font.glyphs.get(codePoint);
-    if (!b) throw new Error(`Font does not have char: ...`);
-    b.bitmap = bitmap;
+    const updatedGlyph = { ...char, bitmap };
 
-    setFont({ ...font });
+    // Use ultra-fast per-character update
+    updateCharacter(codePoint, updatedGlyph);
   };
 
   return (
