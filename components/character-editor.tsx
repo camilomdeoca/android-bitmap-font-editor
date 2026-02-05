@@ -37,7 +37,6 @@ export function CharacterEditor({
         onLayout={(e) => {
           sizeRef.current.width = e.nativeEvent.layout.width;
           sizeRef.current.height = e.nativeEvent.layout.height;
-          console.log(e.nativeEvent.layout);
         }}
         onResponderStart={ev => {
           const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);

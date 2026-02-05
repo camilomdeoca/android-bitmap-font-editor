@@ -81,7 +81,6 @@ type ParseCtx = {
 };
 
 export function font2serializable(font: Font): SerializableFont {
-  console.log(font);
   return {
     headers: font.headers,
     props: [...font.props.entries()],
@@ -537,8 +536,6 @@ export function serializeToBDF(font: Font): string {
 
   // ---- Glyph count ----
   lines.push(`CHARS ${font.glyphs.size}`)
-
-  console.log(font.glyphs.size);
 
   // ---- Glyphs ----
   for (const g of font.glyphs.values()) {
