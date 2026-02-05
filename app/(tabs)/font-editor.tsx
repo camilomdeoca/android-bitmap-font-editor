@@ -1,4 +1,4 @@
-import { Modal, Platform, Pressable, TextInput, View } from "react-native";
+import { Modal, Pressable, TextInput, View , Platform } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -51,14 +51,13 @@ export default function FontEditor() {
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderDefault");
 
-  const [loaded] = useFonts({
-    'monospaced-nerd-font': require('@/assets/fonts/FiraCodeNerdFont-Medium.ttf'),
-  });
+  const [loaded] = useFonts(
+    Platform.OS === "web" ? {
+      "FiraCodeNerdFont-Medium": require("@/assets/fonts/FiraCodeNerdFont-Medium.ttf"),
+    } : {}
+  );
 
   const [glyphSettingsOpen, setGlyphSettingsOpen] = useState(false);
-  
-  const [charInputText, setCharInputText] = useState("");
-  const [codePointInputText, setCodePointInputText] = useState("");
 
   const { font, char, selectedCodepoint } = useFontStore(useShallow(state => {
     const char = state.font
@@ -70,6 +69,11 @@ export default function FontEditor() {
       selectedCodepoint: state.selectedCodepoint,
     };
   }));
+
+  const [charInputText, setCharInputText] =
+    useState(() => String.fromCodePoint(selectedCodepoint));
+  const [codePointInputText, setCodePointInputText] =
+    useState(() => selectedCodepoint.toString(16));
 
   const setFont = useFontStore(state => state.setFont);
   const updateGlyph = useFontStore(state => state.updateGlyph);
@@ -100,7 +104,7 @@ export default function FontEditor() {
             borderColor,
             borderWidth: 1,
             borderRadius: 10,
-            fontFamily: loaded ? "monospaced-nerd-font" : Fonts.mono,
+            fontFamily: (Platform.OS !== "web" || loaded) ? "FiraCodeNerdFont-Medium" : Fonts.mono,
           }}
           value={charInputText}
           onChangeText={value => {

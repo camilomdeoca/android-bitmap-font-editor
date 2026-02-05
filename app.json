@@ -41,7 +41,14 @@
           }
         }
       ],
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/FiraCodeNerdFont-Medium.ttf"
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
