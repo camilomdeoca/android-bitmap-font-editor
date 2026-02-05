@@ -1,4 +1,4 @@
-import { Modal, Pressable, TextInput, View , Platform } from "react-native";
+import { Modal, Pressable, View , Platform } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -16,6 +16,7 @@ import * as Sharing from "expo-sharing";
 import { useFonts } from "expo-font";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Fonts } from "@/constants/theme";
+import { ThemedTextInput } from "@/components/ui/themed-text-input";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -97,14 +98,10 @@ export default function FontEditor() {
       }}
     >
       <View style={{ flexDirection: "row", gap: 10 }}>
-        <TextInput
+        <ThemedTextInput
           style={{
-            flex: 1,
-            color,
-            borderColor,
-            borderWidth: 1,
-            borderRadius: 10,
             fontFamily: (Platform.OS !== "web" || loaded) ? "FiraCodeNerdFont-Medium" : Fonts.mono,
+            fontSize: 20,
           }}
           value={charInputText}
           onChangeText={value => {
@@ -117,13 +114,10 @@ export default function FontEditor() {
             }
           }}
         />
-        <TextInput
+        <ThemedTextInput
           style={{
-            flex: 1,
-            color,
-            borderColor,
-            borderWidth: 1,
-            borderRadius: 10,
+            fontFamily: Fonts.mono,
+            fontSize: 20
           }}
           value={codePointInputText}
           onChangeText={value => {
@@ -154,7 +148,7 @@ export default function FontEditor() {
             setFont({ ...font });
           }}
         >
-          <IconSymbol name="plus" color={color} size={28} />
+          <IconSymbol name="plus" color={color} size={36} />
         </ButtonContainer>
       </View>
       <View style={{ flex: 1 }}>
