@@ -11,9 +11,11 @@ import { useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ButtonContainer } from "@/components/ui/button-container";
 
-import { File, Paths } from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import { File, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import { useFonts } from "expo-font";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Fonts } from "@/constants/theme";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -48,6 +50,10 @@ export default function FontEditor() {
   const color = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderDefault");
+
+  const [loaded] = useFonts({
+    'monospaced-nerd-font': require('@/assets/fonts/FiraCodeNerdFont-Medium.ttf'),
+  });
 
   const [glyphSettingsOpen, setGlyphSettingsOpen] = useState(false);
   
@@ -94,6 +100,7 @@ export default function FontEditor() {
             borderColor,
             borderWidth: 1,
             borderRadius: 10,
+            fontFamily: loaded ? "monospaced-nerd-font" : Fonts.mono,
           }}
           value={charInputText}
           onChangeText={value => {
