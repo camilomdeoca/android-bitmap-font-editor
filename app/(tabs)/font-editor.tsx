@@ -13,6 +13,7 @@ import { ButtonContainer } from "@/components/ui/button-container";
 
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -51,31 +52,28 @@ export default function FontEditor() {
   const [glyphSettingsOpen, setGlyphSettingsOpen] = useState(false);
   
   const [charInputText, setCharInputText] = useState("");
-  const [codePoint, setCodePoint] = useState<number | undefined>(undefined);
   const [codePointInputText, setCodePointInputText] = useState("");
 
-  const { font, char } = useFontStore(useShallow(state => {
-    const char = state.font && codePoint !== undefined
-      ? state.font.glyphs.get(codePoint)
+  const { font, char, selectedCodepoint } = useFontStore(useShallow(state => {
+    const char = state.font
+      ? state.font.glyphs.get(state.selectedCodepoint)
       : undefined;
-    // if (state.font !== undefined && b === undefined) {
-    //   throw new Error(`Font does not have char: "${charInputText}"`);
-    // }
     return {
       font: state.font,
       char,
+      selectedCodepoint: state.selectedCodepoint,
     };
   }));
 
   const setFont = useFontStore(state => state.setFont);
-  const updateCharacter = useFontStore(state => state.updateCharacter);
+  const updateGlyph = useFontStore(state => state.updateGlyph);
+  const setSelectedCodepoint = useFontStore(state => state.setSelectedCodepoint);
 
   const handleCharChange = (bitmap: boolean[][]) => {
-    if (!char || !font || !codePoint) return;
+    if (!char || !font) return;
     const updatedGlyph = { ...char, bitmap };
 
-    // Use ultra-fast per-character update
-    updateCharacter(codePoint, updatedGlyph);
+    updateGlyph(selectedCodepoint, updatedGlyph);
   };
 
   return (
@@ -103,8 +101,8 @@ export default function FontEditor() {
             setCharInputText(newChar);
             const newCodePoint = newChar.codePointAt(0);
             if (newCodePoint !== undefined) {
-              setCodePoint(newCodePoint);
               setCodePointInputText(newCodePoint.toString(16));
+              setSelectedCodepoint(newCodePoint);
             }
           }}
         />
@@ -122,14 +120,13 @@ export default function FontEditor() {
             setCodePointInputText(value.toLowerCase());
 
             const newCodePoint = value.length > 0 ? parseInt(value, 16) : undefined;
-            setCodePoint(newCodePoint);
+            if (newCodePoint !== undefined) setSelectedCodepoint(newCodePoint);
             setCharInputText(newCodePoint === undefined ? "" : String.fromCodePoint(newCodePoint))
           }}
         />
         <ButtonContainer
-          disabled={codePoint === undefined || (font && font.glyphs.has(codePoint))}
+          disabled={font && font.glyphs.has(selectedCodepoint)}
           onPress={() => {
-            if (!codePoint) throw new Error("Button should be disabled if no code point");
             if (!font) throw new Error("");
 
             const char0 = font.glyphs.get(0);
@@ -137,12 +134,12 @@ export default function FontEditor() {
 
             const glyph: Glyph = {
               ...char0,
-              glyphname: `U+${codePoint.toString(16).toUpperCase().padStart(8, "0")}`,
-              codepoint: codePoint,
+              glyphname: `U+${selectedCodepoint.toString(16).toUpperCase().padStart(8, "0")}`,
+              codepoint: selectedCodepoint,
               bitmap: char0.bitmap.map(row => [...row]),
             };
 
-            font.glyphs.set(codePoint, glyph);
+            font.glyphs.set(selectedCodepoint, glyph);
             setFont({ ...font });
           }}
         >
@@ -160,47 +157,51 @@ export default function FontEditor() {
           <IconSymbol name="square.and.arrow.down" color={color} size={28} />
         </ButtonContainer>
       </View>}
-      {font && codePoint && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>
-        <View style={{ flex: 1, flexDirection: "column" }}>
-          <Pressable style={{ flexGrow: 1 }} onPress={() => setGlyphSettingsOpen(false)} />
-          <View style={{
-            flexDirection: "row",
-            backgroundColor,
-            width: "100%",
-            bottom: 0,
-            borderTopRightRadius: 10,
-            borderTopLeftRadius: 10,
-            borderWidth: 1,
-            borderColor,
-            padding: 10,
-            position: "absolute",
-            gap: 10,
-          }}>
-            <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
-            <ButtonContainer
-              onPress={() => {
-                char.bbw -= 1;
-                char.bitmap = [...char.bitmap];
-                char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
-                font.glyphs.set(codePoint, {...char})
-                setFont({ ...font });
-              }}
-            >
-              <IconSymbol name="minus" color={color} size={28} />
-            </ButtonContainer>
-            <ButtonContainer
-              onPress={() => {
-                char.bbw += 1;
-                char.bitmap = [...char.bitmap];
-                char.bitmap = char.bitmap.map(row => [...row, false]);
-                font.glyphs.set(codePoint, {...char})
-                setFont({ ...font });
-              }}
-            >
-              <IconSymbol name="plus" color={color} size={28} />
-            </ButtonContainer>
+      {font && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>
+        <SafeAreaView
+          edges={["bottom", "right", "left"]}
+          style={{ flex: 1 }}
+        >
+          <View style={{ flex: 1, flexDirection: "column" }}>
+            <Pressable style={{ flexGrow: 1 }} onPress={() => setGlyphSettingsOpen(false)} />
+            <View style={{
+              flexDirection: "row",
+              backgroundColor,
+              width: "100%",
+              bottom: 0,
+              borderTopRightRadius: 10,
+              borderTopLeftRadius: 10,
+              borderWidth: 1,
+              borderBottomWidth: 0,
+              borderColor,
+              padding: 10,
+              position: "absolute",
+              gap: 10,
+            }}>
+              <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
+              <ButtonContainer
+                onPress={() => {
+                  char.bbw -= 1;
+                  char.bitmap = [...char.bitmap];
+                  char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
+                  updateGlyph(selectedCodepoint, {...char})
+                }}
+              >
+                <IconSymbol name="minus" color={color} size={28} />
+              </ButtonContainer>
+              <ButtonContainer
+                onPress={() => {
+                  char.bbw += 1;
+                  char.bitmap = [...char.bitmap];
+                  char.bitmap = char.bitmap.map(row => [...row, false]);
+                  updateGlyph(selectedCodepoint, {...char})
+                }}
+              >
+                <IconSymbol name="plus" color={color} size={28} />
+              </ButtonContainer>
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>}
     </View>
   );

@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { createMMKV } from 'react-native-mmkv';
 
 const FONT_METADATA_KEY = 'metadata';
+const SELECTED_CODEPOINT_KEY = 'selected-codepoint';
 
 let fontStorage = createMMKV({ id: 'current-font' });
 let glyphStorage = createMMKV({ id: 'current-font-glyphs' });
@@ -15,15 +16,26 @@ interface FontMetadata {
 
 type State = {
   font: Font | undefined,
+  selectedCodepoint: number,
 };
 
 type Actions = {
   setFont: (font?: Font) => void,
-  updateCharacter: (codepoint: number, glyph: Glyph) => void,
+  updateGlyph: (codepoint: number, glyph: Glyph) => void,
+  setSelectedCodepoint: (codepoint: number) => void,
 };
 
 function getGlyphHexKey(codepoint: number): string {
   return codepoint.toString(16);
+}
+
+function saveSelectedCodepointToMMKV(codepoint: number): void {
+  fontStorage.set(SELECTED_CODEPOINT_KEY, codepoint);
+}
+
+function loadSelectedCodepointFromMMKV(): number | undefined {
+  const data = fontStorage.getNumber(SELECTED_CODEPOINT_KEY);
+  return data;
 }
 
 function saveFontMetadataToMMKV(font: Font): void {
@@ -87,11 +99,13 @@ function switchFontInMMKV(newFont: Font | undefined): void {
 
 export const useFontStore = create<State & Actions>((set, get) => ({
   font: loadFontFromMMKV(),
+  selectedCodepoint: loadSelectedCodepointFromMMKV() ?? 0,
   setFont: (font = undefined) => {
     set({ font });
     switchFontInMMKV(font);
   },
-  updateCharacter: (codepoint: number, glyph: Glyph) => {
+  updateGlyph: (codepoint: number, glyph: Glyph) => {
+    // Update state immediately
     set(state => {
       if (!state.font) return state;
       const updatedFont = { ...state.font };
@@ -100,5 +114,9 @@ export const useFontStore = create<State & Actions>((set, get) => ({
     });
     
     saveGlyphToMMKV(codepoint, glyph);
+  },
+  setSelectedCodepoint: (codepoint = 0) => {
+    set({ selectedCodepoint: codepoint });
+    saveSelectedCodepointToMMKV(codepoint);
   },
 }));
