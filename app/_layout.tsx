@@ -6,6 +6,9 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { Platform } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Fonts } from '@/constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -14,6 +17,16 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const backgroundColor = useThemeColor({}, "background");
+
+  const [loaded] = useFonts(
+    Platform.OS === "web" ? {
+      [Fonts.fontPreview]: require("@/assets/fonts/TerminessNerdFont-Medium_Custom.ttf"),
+    } : {}
+  );
+
+  if (!loaded) {
+    throw new Error(`Couldnt find font: ${Fonts.fontPreview}`);
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

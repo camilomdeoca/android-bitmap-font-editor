@@ -1,18 +1,21 @@
-import {  View } from "react-native";
+import { View, Text } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { Fonts } from "@/constants/theme";
 
 export function CharacterEditor({
   bitmap,
   onChange,
+  previewChar,
 }: {
   bitmap: boolean[][],
   onChange: (bitmap: boolean[][]) => void,
+  previewChar?: string,
 }) {
   const borderColor = useThemeColor({}, "borderDefault");
 
-  const sizeRef = useRef({ width: 0, height: 0 });
+  const [size, setSize] = useState({ width: 1, height: 1 });
   const startingPixelStateRef = useRef(false);
 
   const width = bitmap[0].length;
@@ -35,12 +38,14 @@ export function CharacterEditor({
         }}
         onStartShouldSetResponder={() => true}
         onLayout={(e) => {
-          sizeRef.current.width = e.nativeEvent.layout.width;
-          sizeRef.current.height = e.nativeEvent.layout.height;
+          setSize({
+            width: e.nativeEvent.layout.width,
+            height: e.nativeEvent.layout.height,
+          });
         }}
         onResponderStart={ev => {
-          const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
-          const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
+          const x = Math.floor(ev.nativeEvent.locationX * width / size.width);
+          const y = Math.floor(ev.nativeEvent.locationY * height / size.height);
           
           if (x < 0 || x >= width) return;
           if (y < 0 || y >= height) return;
@@ -54,8 +59,8 @@ export function CharacterEditor({
           onChange(newBitmap);
         }}
         onResponderMove={ev => {
-          const x = Math.floor(ev.nativeEvent.locationX * width / sizeRef.current.width);
-          const y = Math.floor(ev.nativeEvent.locationY * height / sizeRef.current.height);
+          const x = Math.floor(ev.nativeEvent.locationX * width / size.width);
+          const y = Math.floor(ev.nativeEvent.locationY * height / size.height);
 
           if (x < 0 || x >= width) return;
           if (y < 0 || y >= height) return;
@@ -93,6 +98,29 @@ export function CharacterEditor({
           </View>
         ))}
       </View>
+      {previewChar !== undefined && <View
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+        }}
+        pointerEvents="none"
+      >
+        <Text
+          style={{
+            height: size.height,
+            lineHeight: size.height,
+            fontSize: size.height,
+            color: "blue",
+            fontFamily: Fonts.fontPreview,
+            opacity: 0.4,
+            aspectRatio: width / height,
+            margin: "auto",
+          }}
+        >
+          {previewChar}
+        </Text>
+      </View>}
     </View>
   );
 }

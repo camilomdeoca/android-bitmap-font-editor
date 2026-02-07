@@ -1,4 +1,4 @@
-import { Modal, Pressable, View , Platform } from "react-native";
+import { Modal, Pressable, View , Platform, Switch } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { CharacterEditor } from "@/components/character-editor";
@@ -13,7 +13,6 @@ import { ButtonContainer } from "@/components/ui/button-container";
 
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import { useFonts } from "expo-font";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Fonts } from "@/constants/theme";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
@@ -47,16 +46,19 @@ function saveFontToFile(font: Font) {
   }
 }
 
+function canFromCodePoint(value: number): boolean {
+  try {
+    String.fromCodePoint(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default function FontEditor() {
   const color = useThemeColor({}, "text");
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderDefault");
-
-  const [loaded] = useFonts(
-    Platform.OS === "web" ? {
-      "FiraCodeNerdFont-Medium": require("@/assets/fonts/FiraCodeNerdFont-Medium.ttf"),
-    } : {}
-  );
 
   const [glyphSettingsOpen, setGlyphSettingsOpen] = useState(false);
 
@@ -64,10 +66,13 @@ export default function FontEditor() {
     const char = state.font
       ? state.font.glyphs.get(state.selectedCodepoint)
       : undefined;
+    const selectedCodepoint = canFromCodePoint(state.selectedCodepoint)
+      ? state.selectedCodepoint
+      : 0;
     return {
       font: state.font,
       char,
-      selectedCodepoint: state.selectedCodepoint,
+      selectedCodepoint,
     };
   }));
 
@@ -87,6 +92,8 @@ export default function FontEditor() {
     updateGlyph(selectedCodepoint, updatedGlyph);
   };
 
+  const [overlayEnabled, setOverlayEnabled] = useState(true);
+
   return (
     <View
       style={{
@@ -100,7 +107,7 @@ export default function FontEditor() {
       <View style={{ flexDirection: "row", gap: 10 }}>
         <ThemedTextInput
           style={{
-            fontFamily: (Platform.OS !== "web" || loaded) ? "FiraCodeNerdFont-Medium" : Fonts.mono,
+            fontFamily: Fonts.fontPreview,
             fontSize: 20,
           }}
           value={charInputText}
@@ -151,8 +158,17 @@ export default function FontEditor() {
           <IconSymbol name="plus" color={color} size={36} />
         </ButtonContainer>
       </View>
-      <View style={{ flex: 1 }}>
-        {char && <CharacterEditor bitmap={char.bitmap} onChange={handleCharChange} />}
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+        }}
+      >
+        {char && <CharacterEditor
+          bitmap={char.bitmap}
+          onChange={handleCharChange}
+          previewChar={overlayEnabled ? String.fromCodePoint(selectedCodepoint) : undefined}
+        />}
       </View>
       {font && <View style={{ flexDirection: "row", gap: 10 }}>
         <ButtonContainer onPress={() => setGlyphSettingsOpen(true)}>
@@ -170,7 +186,7 @@ export default function FontEditor() {
           <View style={{ flex: 1, flexDirection: "column" }}>
             <Pressable style={{ flexGrow: 1 }} onPress={() => setGlyphSettingsOpen(false)} />
             <View style={{
-              flexDirection: "row",
+              flexDirection: "column",
               backgroundColor,
               width: "100%",
               bottom: 0,
@@ -183,27 +199,33 @@ export default function FontEditor() {
               position: "absolute",
               gap: 10,
             }}>
-              <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
-              <ButtonContainer
-                onPress={() => {
-                  char.bbw -= 1;
-                  char.bitmap = [...char.bitmap];
-                  char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
-                  updateGlyph(selectedCodepoint, {...char})
-                }}
-              >
-                <IconSymbol name="minus" color={color} size={28} />
-              </ButtonContainer>
-              <ButtonContainer
-                onPress={() => {
-                  char.bbw += 1;
-                  char.bitmap = [...char.bitmap];
-                  char.bitmap = char.bitmap.map(row => [...row, false]);
-                  updateGlyph(selectedCodepoint, {...char})
-                }}
-              >
-                <IconSymbol name="plus" color={color} size={28} />
-              </ButtonContainer>
+              <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
+                <ButtonContainer
+                  onPress={() => {
+                    char.bbw -= 1;
+                    char.bitmap = [...char.bitmap];
+                    char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="minus" color={color} size={28} />
+                </ButtonContainer>
+                <ButtonContainer
+                  onPress={() => {
+                    char.bbw += 1;
+                    char.bitmap = [...char.bitmap];
+                    char.bitmap = char.bitmap.map(row => [...row, false]);
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="plus" color={color} size={28} />
+                </ButtonContainer>
+              </View>
+              <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>Toggle overlay</ThemedText>
+                <Switch value={overlayEnabled} onValueChange={setOverlayEnabled} />
+              </View>
             </View>
           </View>
         </SafeAreaView>

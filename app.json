@@ -45,7 +45,8 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/FiraCodeNerdFont-Medium.ttf"
+            "./assets/fonts/FiraCodeNerdFont-Medium.ttf",
+            "./assets/fonts/TerminessNerdFont-Medium_Custom.ttf"
           ]
         }
       ]
