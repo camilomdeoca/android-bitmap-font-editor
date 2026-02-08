@@ -86,6 +86,13 @@ export default function FontEditor() {
   const updateGlyph = useFontStore(state => state.updateGlyph);
   const setSelectedCodepoint = useFontStore(state => state.setSelectedCodepoint);
 
+  const handleGlyphNameChange = (newName: string) => {
+    if (char && newName.trim() && newName.trim() !== char.glyphname) {
+      const updatedGlyph = { ...char, glyphname: newName.trim() };
+      updateGlyph(selectedCodepoint, updatedGlyph);
+    }
+  };
+
   const handleCharChange = (bitmap: boolean[][]) => {
     if (!char || !font) return;
     const updatedGlyph = { ...char, bitmap };
@@ -95,20 +102,22 @@ export default function FontEditor() {
 
   const [overlayEnabled, setOverlayEnabled] = useState(true);
 
-  const { charPickerOptions, charKeys } = useMemo(() => {
+  const { charPickerOptions, charPickerOptionCodepoints } = useMemo(() => {
     const charPickerOptions = [];
-    const charKeys = [];
+    const charPickerOptionCodepoints = [];
     const entries = [...(font?.glyphs.entries() ?? [])];
     entries.sort(([aCodepoint], [bCodepoint]) => aCodepoint - bCodepoint);
     for (const [codepoint, glyph] of entries) {
       const char = String.fromCodePoint(codepoint);
       const hex = codepoint.toString(16).toUpperCase().padStart(4, "0");
       charPickerOptions.push(`${char} - ${hex} - ${glyph.glyphname}`);
-      charKeys.push(codepoint);
+      charPickerOptionCodepoints.push(codepoint);
     }
-    return { charPickerOptions, charKeys };
-  }, [font?.glyphs]);
-  const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(0);
+    return { charPickerOptions, charPickerOptionCodepoints };
+  }, [font]);
+  const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(
+    () => charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint),
+  );
 
   return (
     <View
@@ -125,7 +134,7 @@ export default function FontEditor() {
           options={charPickerOptions}
           onValueChange={idx => {
             setSelectedCodepointIdx(idx);
-            const newCodePoint = charKeys[idx];
+            const newCodePoint = charPickerOptionCodepoints[idx];
             setCodePointInputText(newCodePoint.toString(16));
             setSelectedCodepoint(newCodePoint);
             setCharInputText(String.fromCodePoint(newCodePoint))
@@ -211,6 +220,7 @@ export default function FontEditor() {
           <IconSymbol name="square.and.arrow.down" color={color} size={28} />
         </ButtonContainer>
       </View>}
+
       {font && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>
         <SafeAreaView
           edges={["bottom", "right", "left"]}
@@ -222,16 +232,28 @@ export default function FontEditor() {
               flexDirection: "column",
               backgroundColor,
               width: "100%",
-              bottom: 0,
               borderTopRightRadius: 10,
               borderTopLeftRadius: 10,
               borderWidth: 1,
               borderBottomWidth: 0,
               borderColor,
               padding: 10,
-              position: "absolute",
               gap: 10,
             }}>
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+              }}>
+                <ThemedText style={{ color }}>Name:</ThemedText>
+                <ThemedTextInput
+                  style={{ flex: 1 }}
+                  value={char.glyphname}
+                  onChangeText={handleGlyphNameChange}
+                  placeholder="Character name"
+                />
+              </View>
               <View style={{ width: "100%", flexDirection: "row" }}>
                 <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
                 <ButtonContainer
