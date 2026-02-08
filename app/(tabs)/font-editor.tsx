@@ -7,7 +7,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Font } from "@/lib/bdfparser";
 import { useShallow } from "zustand/shallow";
 import { Glyph, serializeToBDF } from "@/lib/bdfparser/bdfparser";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ButtonContainer } from "@/components/ui/button-container";
 
@@ -16,6 +16,7 @@ import * as Sharing from "expo-sharing";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Fonts } from "@/constants/theme";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
+import { Select } from "@/components/ui/select";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -94,6 +95,21 @@ export default function FontEditor() {
 
   const [overlayEnabled, setOverlayEnabled] = useState(true);
 
+  const { charPickerOptions, charKeys } = useMemo(() => {
+    const charPickerOptions = [];
+    const charKeys = [];
+    const entries = [...(font?.glyphs.entries() ?? [])];
+    entries.sort(([aCodepoint], [bCodepoint]) => aCodepoint - bCodepoint);
+    for (const [codepoint, glyph] of entries) {
+      const char = String.fromCodePoint(codepoint);
+      const hex = codepoint.toString(16).toUpperCase().padStart(4, "0");
+      charPickerOptions.push(`${char} - ${hex} - ${glyph.glyphname}`);
+      charKeys.push(codepoint);
+    }
+    return { charPickerOptions, charKeys };
+  }, [font?.glyphs]);
+  const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(0);
+
   return (
     <View
       style={{
@@ -105,8 +121,24 @@ export default function FontEditor() {
       }}
     >
       <View style={{ flexDirection: "row", gap: 10 }}>
+        <Select
+          options={charPickerOptions}
+          onValueChange={idx => {
+            setSelectedCodepointIdx(idx);
+            const newCodePoint = charKeys[idx];
+            setCodePointInputText(newCodePoint.toString(16));
+            setSelectedCodepoint(newCodePoint);
+            setCharInputText(String.fromCodePoint(newCodePoint))
+          }}
+          value={selectedCodepointIdx}
+          optionTextStyle={{ fontFamily: Fonts.fontPreview }}
+          filterable
+        />
+      </View>
+      <View style={{ flexDirection: "row", gap: 10 }}>
         <ThemedTextInput
           style={{
+            flex: 1,
             fontFamily: Fonts.fontPreview,
             fontSize: 20,
           }}
@@ -123,6 +155,7 @@ export default function FontEditor() {
         />
         <ThemedTextInput
           style={{
+            flex: 1,
             fontFamily: Fonts.mono,
             fontSize: 20
           }}

@@ -13,7 +13,6 @@ export function ThemedTextInput({
     <TextInput
       style={[
         {
-          flex: 1,
           color,
           borderColor,
           borderWidth: 1,
