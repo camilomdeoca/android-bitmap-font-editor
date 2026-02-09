@@ -102,6 +102,8 @@ export default function FontEditor() {
   };
 
   const [overlayEnabled, setOverlayEnabled] = useState(true);
+  const [gridEnabled, setGridEnabled] = useState(true);
+  const [boundingBoxEnabled, setBoundingBoxEnabled] = useState(true);
 
   const { charPickerOptions, charPickerOptionCodepoints } = useMemo(() => {
     const charPickerOptions = [];
@@ -213,6 +215,9 @@ export default function FontEditor() {
           bitmap={char.bitmap}
           onChange={handleCharChange}
           previewChar={overlayEnabled ? String.fromCodePoint(selectedCodepoint) : undefined}
+          showGrid={gridEnabled}
+          showBoundingBox={boundingBoxEnabled}
+          glyph={char}
         />}
       </View>
       {font && <View style={{ flexDirection: "row", gap: 10 }}>
@@ -283,6 +288,14 @@ export default function FontEditor() {
               <View style={{ width: "100%", flexDirection: "row" }}>
                 <ThemedText style={{ color }}>Toggle overlay</ThemedText>
                 <Switch value={overlayEnabled} onValueChange={setOverlayEnabled} />
+              </View>
+              <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>Toggle grid</ThemedText>
+                <Switch value={gridEnabled} onValueChange={setGridEnabled} />
+              </View>
+              <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>Toggle bounding box</ThemedText>
+                <Switch value={boundingBoxEnabled} onValueChange={setBoundingBoxEnabled} />
               </View>
             </View>
           </View>

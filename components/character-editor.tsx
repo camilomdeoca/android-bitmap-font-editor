@@ -1,17 +1,142 @@
-import { View, Text } from "react-native";
+import { View, Text, ColorValue } from "react-native";
 
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { useRef, useState } from "react";
 import { Fonts } from "@/constants/theme";
+import { Glyph } from "@/lib/bdfparser";
+
+function renderGrid(width: number, height: number, backgroundColor: ColorValue) {
+  const verticalLines = [];
+  for (let i = 0; i <= width; i++) {
+    verticalLines.push(<View
+      style={{
+        width: 1,
+        backgroundColor,
+        height: "100%",
+      }}
+    />);
+  }
+
+  const horizontalLines = [];
+  for (let i = 0; i <= height; i++) {
+    horizontalLines.push(<View
+      style={{
+        height: 1,
+        backgroundColor,
+        width: "100%",
+      }}
+    />);
+  }
+
+  return <View style={{
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+  }}>
+    <View
+      style={{
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        justifyContent: "space-between",
+        flexDirection: "row",
+      }}
+      pointerEvents="none"
+    >
+     {verticalLines}
+    </View>
+
+    <View
+      style={{
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        justifyContent: "space-between",
+        flexDirection: "column",
+      }}
+      pointerEvents="none"
+    >
+     {horizontalLines}
+    </View>
+  </View>;
+}
+
+function renderBoundingBox(glyph: Glyph, backgroundColor: ColorValue) {
+  const verticalLines = [];
+  for (let i = 0; i <= glyph.bbw; i++) {
+    const shouldBeColored =
+      glyph.bbw - i === glyph.bbw + glyph.bbxoff || // Show the character offset
+      i === glyph.dwx0; // Show advance
+    verticalLines.push(<View
+      style={{
+        width: 1,
+        backgroundColor: shouldBeColored ? backgroundColor : undefined,
+        height: "100%",
+      }}
+    />);
+  }
+
+  const horizontalLines = [];
+  for (let i = 0; i <= glyph.bbh; i++) {
+    const shouldBeColored =
+      i === glyph.bbh + glyph.bbyoff || // Show the character offset
+      i === glyph.dwy0; // Show advance
+    horizontalLines.push(<View
+      style={{
+        height: 1,
+        backgroundColor: shouldBeColored ? backgroundColor : undefined,
+        width: "100%",
+      }}
+    />);
+  }
+
+  return <View style={{
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+  }}>
+    <View
+      style={{
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        justifyContent: "space-between",
+        flexDirection: "row",
+      }}
+      pointerEvents="none"
+    >
+     {verticalLines}
+    </View>
+
+    <View
+      style={{
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        justifyContent: "space-between",
+        flexDirection: "column",
+      }}
+      pointerEvents="none"
+    >
+     {horizontalLines}
+    </View>
+  </View>;
+}
 
 export function CharacterEditor({
   bitmap,
   onChange,
   previewChar,
+  glyph,
+  showGrid = true,
+  showBoundingBox = true,
 }: {
   bitmap: boolean[][],
   onChange: (bitmap: boolean[][]) => void,
   previewChar?: string,
+  showGrid?: boolean,
+  showBoundingBox?: boolean,
+  glyph: Glyph,
 }) {
   const borderColor = useThemeColor({}, "borderDefault");
 
@@ -72,31 +197,33 @@ export function CharacterEditor({
           onChange(newBitmap);
         }}
       >
-        {bitmap.map((row, y) => (
-          <View
-            key={y}
-            pointerEvents="none"
-            style={{
-              flexDirection: "row",
-              flex: 1,
-            }}
-          >
-            {row.map((state, x) => (
-              <View
-                key={x}
-                pointerEvents="none"
-                style={{
-                  backgroundColor: state ? "#ffffff" : "black",
-                  flex: 1,
-                  aspectRatio: 1,
-                  borderColor,
-                  borderWidth: 1,
-                }}
-              >
-              </View>
-            ))}
-          </View>
-        ))}
+        <View style={{ flex: 1 }}>
+          {bitmap.map((row, y) => (
+            <View
+              key={y}
+              pointerEvents="none"
+              style={{
+                flexDirection: "row",
+                flex: 1,
+              }}
+            >
+              {row.map((state, x) => (
+                <View
+                  key={x}
+                  pointerEvents="none"
+                  style={{
+                    backgroundColor: state ? "#ffffff" : "black",
+                    flex: 1,
+                    aspectRatio: 1,
+                  }}
+                >
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+        {showGrid && renderGrid(bitmap[0].length, bitmap.length, borderColor)}
+        {showBoundingBox && renderBoundingBox(glyph, "red")}
       </View>
       {previewChar !== undefined && <View
         style={{
