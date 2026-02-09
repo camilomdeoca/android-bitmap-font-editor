@@ -14,6 +14,7 @@ export type SelectParams = {
   options: string[];
   optionTextStyle: TextProps["style"];
   filterable?: boolean,
+  placeholder?: string,
 } & Omit<PressableProps, "onPress" | "children">;
 
 /**
@@ -26,6 +27,7 @@ export function Select({
   style,
   optionTextStyle,
   filterable = false,
+  placeholder = "",
   ...params
 }: SelectParams) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -33,11 +35,12 @@ export function Select({
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderDefault");
   const textColor = useThemeColor({}, "text");
+  const textColorDisabled = useThemeColor({}, "textDisabled");
   const backgroundColorActive = useThemeColor({}, "backgroundActive");
 
   const selectedOption = value !== undefined && value >= 0 && value < options.length 
     ? options[value] 
-    : "";
+    : placeholder;
 
   const handleOptionPress = (index: number) => {
     onValueChange(index);
@@ -78,7 +81,10 @@ export function Select({
       onPress={() => setModalVisible(true)}
       {...params}
     >
-      <ThemedText style={[{ flex: 1 }, optionTextStyle]}>
+      <ThemedText style={[
+        { flex: 1, color: value ? textColor : textColorDisabled },
+        optionTextStyle,
+      ]}>
         {selectedOption}
       </ThemedText>
       <IconSymbol name="chevron.down" color={textColor} size={24} />

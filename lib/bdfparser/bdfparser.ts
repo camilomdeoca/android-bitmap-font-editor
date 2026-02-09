@@ -538,7 +538,9 @@ export function serializeToBDF(font: Font): string {
   lines.push(`CHARS ${font.glyphs.size}`)
 
   // ---- Glyphs ----
-  for (const g of font.glyphs.values()) {
+  const glyphs = [ ...font.glyphs.values() ];
+  glyphs.sort((a, b) => a.codepoint - b.codepoint);
+  for (const g of glyphs) {
     const {
       glyphname,
       codepoint,

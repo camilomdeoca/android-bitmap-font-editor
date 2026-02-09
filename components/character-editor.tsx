@@ -9,6 +9,7 @@ function renderGrid(width: number, height: number, backgroundColor: ColorValue) 
   const verticalLines = [];
   for (let i = 0; i <= width; i++) {
     verticalLines.push(<View
+      key={i}
       style={{
         width: 1,
         backgroundColor,
@@ -20,6 +21,7 @@ function renderGrid(width: number, height: number, backgroundColor: ColorValue) 
   const horizontalLines = [];
   for (let i = 0; i <= height; i++) {
     horizontalLines.push(<View
+      key={i}
       style={{
         height: 1,
         backgroundColor,
@@ -68,6 +70,7 @@ function renderBoundingBox(glyph: Glyph, backgroundColor: ColorValue) {
       glyph.bbw - i === glyph.bbw + glyph.bbxoff || // Show the character offset
       i === glyph.dwx0; // Show advance
     verticalLines.push(<View
+      key={i}
       style={{
         width: 1,
         backgroundColor: shouldBeColored ? backgroundColor : undefined,
@@ -82,6 +85,7 @@ function renderBoundingBox(glyph: Glyph, backgroundColor: ColorValue) {
       i === glyph.bbh + glyph.bbyoff || // Show the character offset
       i === glyph.dwy0; // Show advance
     horizontalLines.push(<View
+      key={i}
       style={{
         height: 1,
         backgroundColor: shouldBeColored ? backgroundColor : undefined,

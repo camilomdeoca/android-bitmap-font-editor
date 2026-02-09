@@ -118,9 +118,11 @@ export default function FontEditor() {
     }
     return { charPickerOptions, charPickerOptionCodepoints };
   }, [font]);
-  const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(
-    () => charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint),
-  );
+  const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(() => {
+      const idx = charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint);
+      if (idx < 0) return undefined;
+      return idx;
+  });
 
   const keyboardHeight = useKeyboardHeight();
 
@@ -145,6 +147,7 @@ export default function FontEditor() {
             setCharInputText(String.fromCodePoint(newCodePoint))
           }}
           value={selectedCodepointIdx}
+          placeholder="Select a character..."
           optionTextStyle={{ fontFamily: Fonts.fontPreview }}
           filterable
         />
@@ -163,6 +166,9 @@ export default function FontEditor() {
             const newCodePoint = newChar.codePointAt(0);
             if (newCodePoint !== undefined) {
               setCodePointInputText(newCodePoint.toString(16));
+              setSelectedCodepointIdx(
+                charPickerOptionCodepoints.findIndex(codepoint => codepoint === newCodePoint)
+              );
               setSelectedCodepoint(newCodePoint);
             }
           }}
@@ -181,6 +187,10 @@ export default function FontEditor() {
             const newCodePoint = value.length > 0 ? parseInt(value, 16) : undefined;
             if (newCodePoint !== undefined) setSelectedCodepoint(newCodePoint);
             setCharInputText(newCodePoint === undefined ? "" : String.fromCodePoint(newCodePoint))
+            let idx: number | undefined = charPickerOptionCodepoints
+              .findIndex(codepoint => codepoint === newCodePoint);
+            if (idx < 0) idx = undefined;
+            setSelectedCodepointIdx(idx);
           }}
         />
         <ButtonContainer

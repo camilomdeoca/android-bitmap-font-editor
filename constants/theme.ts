@@ -11,6 +11,7 @@ const tintColorDark = "#fff";
 export const Colors = {
   light: {
     text: "#262626",
+    textDisabled: "#525252",
     background: "#fafafa",
     backgroundHover: "#e5e5e5",
     backgroundActive: "#a3a3a3",
@@ -22,6 +23,7 @@ export const Colors = {
   },
   dark: {
     text: "#e5e5e5",
+    textDisabled: "#a3a3a3",
     background: "#171717",
     backgroundHover: "#404040",
     backgroundActive: "#525252",
