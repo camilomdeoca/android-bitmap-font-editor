@@ -9,6 +9,7 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { Platform } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Fonts } from '@/constants/theme';
+import { useKeyboardHeight } from '@/hooks/use-keyboard-height';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -28,6 +29,8 @@ export default function RootLayout() {
     throw new Error(`Couldnt find font: ${Fonts.fontPreview}`);
   }
 
+  const keyboardHeight = useKeyboardHeight();
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <SafeAreaView
@@ -35,6 +38,7 @@ export default function RootLayout() {
         style={{
           flex: 1,
           backgroundColor, 
+          marginBottom: keyboardHeight,
         }}
       >
         <Stack>

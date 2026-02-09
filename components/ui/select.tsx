@@ -6,6 +6,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PressableProps } from "react-native/Libraries/Components/Pressable/Pressable";
 import { ThemedTextInput } from "./themed-text-input";
+import { useKeyboardHeight } from "@/hooks/use-keyboard-height";
 
 export type SelectParams = {
   value: number | undefined;
@@ -54,6 +55,8 @@ export function Select({
     [filter, options],
   );
 
+  const keyboardHeight = useKeyboardHeight();
+
   return <>
     <Pressable
       style={state => [
@@ -90,7 +93,11 @@ export function Select({
         edges={["bottom", "right", "left"]}
         style={{ flex: 1 }}
       >
-        <View style={{ flex: 1, flexDirection: "column" }}>
+        <View style={{
+          flex: 1,
+          flexDirection: "column",
+          marginBottom: keyboardHeight,
+        }}>
           <Pressable 
             style={{ flex: 1 }} 
             onPress={() => setModalVisible(false)} 

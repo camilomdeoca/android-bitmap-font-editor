@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Fonts } from "@/constants/theme";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
 import { Select } from "@/components/ui/select";
+import { useKeyboardHeight } from "@/hooks/use-keyboard-height";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -118,6 +119,8 @@ export default function FontEditor() {
   const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(
     () => charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint),
   );
+
+  const keyboardHeight = useKeyboardHeight();
 
   return (
     <View
@@ -226,7 +229,7 @@ export default function FontEditor() {
           edges={["bottom", "right", "left"]}
           style={{ flex: 1 }}
         >
-          <View style={{ flex: 1, flexDirection: "column" }}>
+          <View style={{ flex: 1, flexDirection: "column", marginBottom: keyboardHeight }}>
             <Pressable style={{ flexGrow: 1 }} onPress={() => setGlyphSettingsOpen(false)} />
             <View style={{
               flexDirection: "column",
