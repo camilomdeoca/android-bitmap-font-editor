@@ -18,6 +18,7 @@ import { Fonts } from "@/constants/theme";
 import { ThemedTextInput } from "@/components/ui/themed-text-input";
 import { Select } from "@/components/ui/select";
 import { useKeyboardHeight } from "@/hooks/use-keyboard-height";
+import { NumberInput } from "@/components/ui/number-input";
 
 /// Has to be called from a click
 function saveFontToFile(font: Font) {
@@ -272,91 +273,97 @@ export default function FontEditor() {
                   placeholder="Character name"
                 />
               </View>
-              <View style={{ width: "100%", flexDirection: "row" }}>
-                <ThemedText style={{ color }}>Width = {char.bbw}</ThemedText>
-                <ButtonContainer
-                  onPress={() => {
-                    char.bbw -= 1;
-                    char.bitmap = [...char.bitmap];
-                    char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
-                    updateGlyph(selectedCodepoint, {...char})
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}>
+                <ThemedText>Width</ThemedText>
+                <NumberInput
+                  style={{ flex: 1, }}
+                  value={char.bbw}
+                  min={0}
+                  max={256}
+                  step={1}
+                  onValueChange={(newValue) => {
+                    const delta = newValue - char.bbw;
+                    if (delta > 0) {
+                      char.bbw += 1;
+                      char.bitmap = [...char.bitmap];
+                      char.bitmap = char.bitmap.map(row => [...row, false]);
+                      updateGlyph(selectedCodepoint, {...char})
+                    } else {
+                      char.bbw -= 1;
+                      char.bitmap = [...char.bitmap];
+                      char.bitmap = char.bitmap.map(row => row.toSpliced(row.length - 1, 1));
+                      updateGlyph(selectedCodepoint, {...char})
+                    }
                   }}
-                >
-                  <IconSymbol name="minus" color={color} size={28} />
-                </ButtonContainer>
-                <ButtonContainer
-                  onPress={() => {
-                    char.bbw += 1;
-                    char.bitmap = [...char.bitmap];
-                    char.bitmap = char.bitmap.map(row => [...row, false]);
-                    updateGlyph(selectedCodepoint, {...char})
-                  }}
-                >
-                  <IconSymbol name="plus" color={color} size={28} />
-                </ButtonContainer>
+                />
               </View>
-              <View style={{ width: "100%", flexDirection: "row" }}>
-                <ThemedText style={{ color }}>Height = {char.bbh}</ThemedText>
-                <ButtonContainer
-                  onPress={() => {
-                    char.bbh -= 1;
-                    char.bitmap = char.bitmap.toSpliced(char.bitmap.length - 1, 1);
-                    updateGlyph(selectedCodepoint, {...char})
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}>
+                <ThemedText>Height</ThemedText>
+                <NumberInput
+                  style={{ flex: 1, }}
+                  value={char.bbh}
+                  min={0}
+                  max={256}
+                  step={1}
+                  onValueChange={(newValue) => {
+                    const delta = newValue - char.bbh;
+                    if (delta > 0) {
+                      char.bbh += 1;
+                      char.bitmap = [...char.bitmap, Array(char.bbw).fill(false)];
+                      updateGlyph(selectedCodepoint, {...char})
+                    } else {
+                      char.bbh -= 1;
+                      char.bitmap = char.bitmap.toSpliced(char.bitmap.length - 1, 1);
+                      updateGlyph(selectedCodepoint, {...char})
+                    }
                   }}
-                >
-                  <IconSymbol name="minus" color={color} size={28} />
-                </ButtonContainer>
-                <ButtonContainer
-                  onPress={() => {
-                    char.bbh += 1;
-                    char.bitmap = [...char.bitmap, Array(char.bbw).fill(false)];
-                    updateGlyph(selectedCodepoint, {...char})
-                  }}
-                >
-                  <IconSymbol name="plus" color={color} size={28} />
-                </ButtonContainer>
+                />
               </View>
-              <View style={{ width: "100%", flexDirection: "row" }}>
-                <ThemedText style={{ color }}>
-                  Advance Width = {char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx}
-                </ThemedText>
-                <ButtonContainer
-                  onPress={() => {
-                    char.dwx0 = (char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx) - 1;
-                    updateGlyph(selectedCodepoint, {...char})
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}>
+                <ThemedText>Advance width</ThemedText>
+                <NumberInput
+                  style={{ flex: 1, }}
+                  value={char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx}
+                  min={0}
+                  max={256}
+                  step={1}
+                  onValueChange={(newValue) => {
+                    updateGlyph(selectedCodepoint, { ...char, dwx0: newValue });
                   }}
-                >
-                  <IconSymbol name="minus" color={color} size={28} />
-                </ButtonContainer>
-                <ButtonContainer
-                  onPress={() => {
-                    char.dwx0 = (char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx) + 1;
-                    updateGlyph(selectedCodepoint, {...char})
-                  }}
-                >
-                  <IconSymbol name="plus" color={color} size={28} />
-                </ButtonContainer>
+                />
               </View>
-              <View style={{ width: "100%", flexDirection: "row" }}>
-                <ThemedText style={{ color }}>
-                  Advance Height = {char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby}
-                </ThemedText>
-                <ButtonContainer
-                  onPress={() => {
-                    char.dwy0 = (char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby) - 1;
-                    updateGlyph(selectedCodepoint, {...char})
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}>
+                <ThemedText>Advance height</ThemedText>
+                <NumberInput
+                  style={{ flex: 1, }}
+                  value={char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby}
+                  min={0}
+                  max={256}
+                  step={1}
+                  onValueChange={(newValue) => {
+                    updateGlyph(selectedCodepoint, { ...char, dwy0: newValue });
                   }}
-                >
-                  <IconSymbol name="minus" color={color} size={28} />
-                </ButtonContainer>
-                <ButtonContainer
-                  onPress={() => {
-                    char.dwy0 = (char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby) + 1;
-                    updateGlyph(selectedCodepoint, {...char})
-                  }}
-                >
-                  <IconSymbol name="plus" color={color} size={28} />
-                </ButtonContainer>
+                />
               </View>
               <View style={{ width: "100%", flexDirection: "row" }}>
                 <ThemedText style={{ color }}>Toggle overlay</ThemedText>

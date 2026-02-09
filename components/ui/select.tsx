@@ -73,7 +73,6 @@ export function Select({
           paddingHorizontal: 12,
           paddingVertical: 8,
           backgroundColor,
-          minHeight: 44,
           width: "100%",
         },
         typeof style === "function" ? style(state) : style,
