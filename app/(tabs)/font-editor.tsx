@@ -286,6 +286,69 @@ export default function FontEditor() {
                 </ButtonContainer>
               </View>
               <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>Height = {char.bbh}</ThemedText>
+                <ButtonContainer
+                  onPress={() => {
+                    char.bbh -= 1;
+                    char.bitmap = char.bitmap.toSpliced(char.bitmap.length - 1, 1);
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="minus" color={color} size={28} />
+                </ButtonContainer>
+                <ButtonContainer
+                  onPress={() => {
+                    char.bbh += 1;
+                    char.bitmap = [...char.bitmap, Array(char.bbw).fill(false)];
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="plus" color={color} size={28} />
+                </ButtonContainer>
+              </View>
+              <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>
+                  Advance Width = {char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx}
+                </ThemedText>
+                <ButtonContainer
+                  onPress={() => {
+                    char.dwx0 = (char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx) - 1;
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="minus" color={color} size={28} />
+                </ButtonContainer>
+                <ButtonContainer
+                  onPress={() => {
+                    char.dwx0 = (char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx) + 1;
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="plus" color={color} size={28} />
+                </ButtonContainer>
+              </View>
+              <View style={{ width: "100%", flexDirection: "row" }}>
+                <ThemedText style={{ color }}>
+                  Advance Height = {char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby}
+                </ThemedText>
+                <ButtonContainer
+                  onPress={() => {
+                    char.dwy0 = (char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby) - 1;
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="minus" color={color} size={28} />
+                </ButtonContainer>
+                <ButtonContainer
+                  onPress={() => {
+                    char.dwy0 = (char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby) + 1;
+                    updateGlyph(selectedCodepoint, {...char})
+                  }}
+                >
+                  <IconSymbol name="plus" color={color} size={28} />
+                </ButtonContainer>
+              </View>
+              <View style={{ width: "100%", flexDirection: "row" }}>
                 <ThemedText style={{ color }}>Toggle overlay</ThemedText>
                 <Switch value={overlayEnabled} onValueChange={setOverlayEnabled} />
               </View>
