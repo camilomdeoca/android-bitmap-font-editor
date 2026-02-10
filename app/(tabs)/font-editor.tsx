@@ -7,7 +7,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Font } from "@/lib/bdfparser";
 import { useShallow } from "zustand/shallow";
 import { Glyph, serializeToBDF } from "@/lib/bdfparser/bdfparser";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ThemedText } from "@/components/themed-text";
 import { ButtonContainer } from "@/components/ui/button-container";
 
@@ -86,6 +86,7 @@ export default function FontEditor() {
 
   const setFont = useFontStore(state => state.setFont);
   const updateGlyph = useFontStore(state => state.updateGlyph);
+  const deleteGlyph = useFontStore(state => state.deleteGlyph);
   const setSelectedCodepoint = useFontStore(state => state.setSelectedCodepoint);
 
   const handleGlyphNameChange = (newName: string) => {
@@ -120,10 +121,16 @@ export default function FontEditor() {
     return { charPickerOptions, charPickerOptionCodepoints };
   }, [font]);
   const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(() => {
-      const idx = charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint);
-      if (idx < 0) return undefined;
-      return idx;
+    const idx = charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint);
+    if (idx < 0) return undefined;
+    return idx;
   });
+
+  useEffect(() => {
+    const idx = charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint);
+    if (idx < 0) return undefined;
+    setSelectedCodepointIdx(idx);
+  }, [charPickerOptionCodepoints, font, selectedCodepoint]);
 
   const keyboardHeight = useKeyboardHeight();
 
@@ -167,9 +174,6 @@ export default function FontEditor() {
             const newCodePoint = newChar.codePointAt(0);
             if (newCodePoint !== undefined) {
               setCodePointInputText(newCodePoint.toString(16));
-              setSelectedCodepointIdx(
-                charPickerOptionCodepoints.findIndex(codepoint => codepoint === newCodePoint)
-              );
               setSelectedCodepoint(newCodePoint);
             }
           }}
@@ -188,10 +192,6 @@ export default function FontEditor() {
             const newCodePoint = value.length > 0 ? parseInt(value, 16) : undefined;
             if (newCodePoint !== undefined) setSelectedCodepoint(newCodePoint);
             setCharInputText(newCodePoint === undefined ? "" : String.fromCodePoint(newCodePoint))
-            let idx: number | undefined = charPickerOptionCodepoints
-              .findIndex(codepoint => codepoint === newCodePoint);
-            if (idx < 0) idx = undefined;
-            setSelectedCodepointIdx(idx);
           }}
         />
         <ButtonContainer
@@ -239,6 +239,12 @@ export default function FontEditor() {
         <ButtonContainer onPress={() => saveFontToFile(font)}>
           <IconSymbol name="square.and.arrow.down" color={color} size={28} />
         </ButtonContainer>
+        {char && <ButtonContainer onPress={() => {
+          deleteGlyph(selectedCodepoint);
+          setSelectedCodepointIdx(undefined);
+        }}>
+          <IconSymbol name="trash.fill" color={color} size={28} />
+        </ButtonContainer>}
       </View>}
 
       {font && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>

@@ -22,6 +22,7 @@ type State = {
 type Actions = {
   setFont: (font?: Font) => void,
   updateGlyph: (codepoint: number, glyph: Glyph) => void,
+  deleteGlyph: (codepoint: number) => void,
   setSelectedCodepoint: (codepoint: number) => void,
 };
 
@@ -55,6 +56,11 @@ function loadFontMetadataFromMMKV(): FontMetadata | undefined {
 function saveGlyphToMMKV(codepoint: number, glyph: Glyph): void {
   const hexKey = getGlyphHexKey(codepoint);
   glyphStorage.set(hexKey, JSON.stringify(glyph));
+}
+
+function deleteGlyphFromMMKV(codepoint: number): void {
+  const hexKey = getGlyphHexKey(codepoint);
+  glyphStorage.remove(hexKey);
 }
 
 function loadGlyphFromMMKV(codepoint: number): Glyph | undefined {
@@ -114,6 +120,16 @@ export const useFontStore = create<State & Actions>((set, get) => ({
     });
     
     saveGlyphToMMKV(codepoint, glyph);
+  },
+  deleteGlyph: (codepoint: number) => {
+    set(state => {
+      if (!state.font) return state;
+      const updatedFont = { ...state.font };
+      updatedFont.glyphs.delete(codepoint);
+      return { font: updatedFont };
+    });
+    
+    deleteGlyphFromMMKV(codepoint);
   },
   setSelectedCodepoint: (codepoint = 0) => {
     set({ selectedCodepoint: codepoint });
