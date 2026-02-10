@@ -81,7 +81,7 @@ export function Select({
       {...params}
     >
       <ThemedText style={[
-        { flex: 1, color: value ? textColor : textColorDisabled },
+        { flex: 1, color: value !== undefined ? textColor : textColorDisabled },
         optionTextStyle,
       ]}>
         {selectedOption}
