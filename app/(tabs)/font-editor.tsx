@@ -222,13 +222,14 @@ export default function FontEditor() {
           alignItems: "center",
         }}
       >
-        {char && <CharacterEditor
+        {font && char && <CharacterEditor
           bitmap={char.bitmap}
           onChange={handleCharChange}
           previewChar={overlayEnabled ? String.fromCodePoint(selectedCodepoint) : undefined}
           showGrid={gridEnabled}
           showBoundingBox={boundingBoxEnabled}
           glyph={char}
+          fontHeight={font.headers.pointsize}
         />}
       </View>
       {font && <View style={{ flexDirection: "row", gap: 10 }}>
@@ -281,7 +282,7 @@ export default function FontEditor() {
               }}>
                 <ThemedText>Width</ThemedText>
                 <NumberInput
-                  style={{ flex: 1, }}
+                  style={{ flex: 1 }}
                   value={char.bbw}
                   min={0}
                   max={256}
@@ -310,7 +311,7 @@ export default function FontEditor() {
               }}>
                 <ThemedText>Height</ThemedText>
                 <NumberInput
-                  style={{ flex: 1, }}
+                  style={{ flex: 1 }}
                   value={char.bbh}
                   min={0}
                   max={256}
@@ -319,11 +320,11 @@ export default function FontEditor() {
                     const delta = newValue - char.bbh;
                     if (delta > 0) {
                       char.bbh += 1;
-                      char.bitmap = [...char.bitmap, Array(char.bbw).fill(false)];
+                      char.bitmap = [Array(char.bbw).fill(false), ...char.bitmap];
                       updateGlyph(selectedCodepoint, {...char})
                     } else {
                       char.bbh -= 1;
-                      char.bitmap = char.bitmap.toSpliced(char.bitmap.length - 1, 1);
+                      char.bitmap = char.bitmap.toSpliced(0, 1);
                       updateGlyph(selectedCodepoint, {...char})
                     }
                   }}
@@ -337,7 +338,7 @@ export default function FontEditor() {
               }}>
                 <ThemedText>Advance width</ThemedText>
                 <NumberInput
-                  style={{ flex: 1, }}
+                  style={{ flex: 1 }}
                   value={char.dwx0 ?? font.headers.dwx0 ?? font.headers.fbbx}
                   min={0}
                   max={256}
@@ -347,7 +348,7 @@ export default function FontEditor() {
                   }}
                 />
               </View>
-              <View style={{
+              {/* <View style={{
                 width: "100%",
                 flexDirection: "row",
                 alignItems: "center",
@@ -355,13 +356,49 @@ export default function FontEditor() {
               }}>
                 <ThemedText>Advance height</ThemedText>
                 <NumberInput
-                  style={{ flex: 1, }}
+                  style={{ flex: 1 }}
                   value={char.dwy0 ?? font.headers.dwy0 ?? font.headers.fbby}
                   min={0}
                   max={256}
                   step={1}
                   onValueChange={(newValue) => {
                     updateGlyph(selectedCodepoint, { ...char, dwy0: newValue });
+                  }}
+                />
+              </View> */}
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}>
+                <ThemedText>X offset</ThemedText>
+                <NumberInput
+                  style={{ flex: 1 }}
+                  value={char.bbxoff}
+                  min={-256}
+                  max={0}
+                  step={1}
+                  onValueChange={(newValue) => {
+                    updateGlyph(selectedCodepoint, { ...char, bbxoff: newValue });
+                  }}
+                />
+              </View>
+              <View style={{
+                width: "100%",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+              }}>
+                <ThemedText>Y offset</ThemedText>
+                <NumberInput
+                  style={{ flex: 1 }}
+                  value={char.bbyoff}
+                  min={-256}
+                  max={0}
+                  step={1}
+                  onValueChange={(newValue) => {
+                    updateGlyph(selectedCodepoint, { ...char, bbyoff: newValue });
                   }}
                 />
               </View>

@@ -63,35 +63,49 @@ function renderGrid(width: number, height: number, backgroundColor: ColorValue) 
   </View>;
 }
 
-function renderBoundingBox(glyph: Glyph, backgroundColor: ColorValue) {
+function renderBoundingBox(glyph: Glyph, backgroundColor: ColorValue, fontHeight: number) {
   const verticalLines = [];
   for (let i = 0; i <= glyph.bbw; i++) {
     const shouldBeColored =
       glyph.bbw - i === glyph.bbw + glyph.bbxoff || // Show the character offset
-      i === glyph.dwx0; // Show advance
-    verticalLines.push(<View
-      key={i}
-      style={{
+      i === - glyph.bbxoff + (glyph.dwx0 ?? glyph.bbw); // Show advance
+    verticalLines.push(<View key={i} style={{ flexDirection: "column" }}>
+      <View style={{
+        width: 1,
+        flex: glyph.bbh - fontHeight,
+      }} />
+      <View style={{
         width: 1,
         backgroundColor: shouldBeColored ? backgroundColor : undefined,
-        height: "100%",
-      }}
-    />);
+        flex: fontHeight + glyph.bbyoff,
+      }} />
+      <View style={{
+        width: 1,
+        flex: -glyph.bbyoff,
+      }} />
+    </View>);
   }
 
   const horizontalLines = [];
   for (let i = 0; i <= glyph.bbh; i++) {
     const shouldBeColored =
       i === glyph.bbh + glyph.bbyoff || // Show the character offset
-      i === glyph.dwy0; // Show advance
-    horizontalLines.push(<View
-      key={i}
-      style={{
+      i === glyph.bbh - fontHeight; // Show advance
+    horizontalLines.push(<View key={i} style={{ flexDirection: "row" }}>
+      <View style={{
+        width: 1,
+        flex: - glyph.bbxoff,
+      }} />
+      <View style={{
         height: 1,
         backgroundColor: shouldBeColored ? backgroundColor : undefined,
-        width: "100%",
-      }}
-    />);
+        flex: (glyph.dwx0 ?? glyph.bbw),
+      }} />
+      <View style={{
+        width: 1,
+        flex: glyph.bbw - (glyph.dwx0 ?? glyph.bbw) + glyph.bbxoff,
+      }} />
+    </View>);
   }
 
   return <View style={{
@@ -134,6 +148,7 @@ export function CharacterEditor({
   glyph,
   showGrid = true,
   showBoundingBox = true,
+  fontHeight,
 }: {
   bitmap: boolean[][],
   onChange: (bitmap: boolean[][]) => void,
@@ -141,6 +156,7 @@ export function CharacterEditor({
   showGrid?: boolean,
   showBoundingBox?: boolean,
   glyph: Glyph,
+  fontHeight: number,
 }) {
   const borderColor = useThemeColor({}, "borderDefault");
 
@@ -227,7 +243,7 @@ export function CharacterEditor({
           ))}
         </View>
         {showGrid && renderGrid(bitmap[0].length, bitmap.length, borderColor)}
-        {showBoundingBox && renderBoundingBox(glyph, "red")}
+        {showBoundingBox && renderBoundingBox(glyph, "red", fontHeight)}
       </View>
       {previewChar !== undefined && <View
         style={{
