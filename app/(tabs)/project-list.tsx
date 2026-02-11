@@ -23,6 +23,7 @@ export default function ProjectsListScreen() {
 
   const setSelectedFontIdx = useFontStore(state => state.setSelectedFontIdx);
   const addFont = useFontStore(state => state.addFont);
+  const deleteFont = useFontStore(state => state.deleteFont);
   const nonSelectedFonts = useFontStore(state => state.nonSelectedFonts);
 
   const handleImportFont = () => {
@@ -53,11 +54,20 @@ export default function ProjectsListScreen() {
           height: "100%",
         }}
       >
-        {(nonSelectedFonts ?? []).map((font, i) => <ButtonContainer key={i} onPress={() => setSelectedFontIdx(i)}>
-          <ThemedText style={{ color }} >{font.headers.fontname}</ThemedText>
-          <ThemedText style={styles.fontPreview} numberOfLines={1}>
-            The quick brown fox jumps over the lazy dog
-          </ThemedText>
+        {(nonSelectedFonts ?? []).map((font, i) => <ButtonContainer
+          key={i}
+          onPress={() => setSelectedFontIdx(i)}
+          style={{ flexDirection: "row", gap: 5 }}
+        >
+          <View style={{ flexDirection: "column", flex: 1 }}>
+            <ThemedText style={{ color }} >{font.headers.fontname}</ThemedText>
+            <ThemedText style={styles.fontPreview} numberOfLines={1}>
+              The quick brown fox jumps over the lazy dog
+            </ThemedText>
+          </View>
+          <ButtonContainer onPress={() => deleteFont(i)}>
+            <IconSymbol name="trash.fill" color={color} />
+          </ButtonContainer>
         </ButtonContainer>)}
 
         <ButtonContainer onPress={handleImportFont}>
@@ -70,6 +80,6 @@ export default function ProjectsListScreen() {
 
 const styles = StyleSheet.create({
   fontPreview: {
-    fontFamily: Fonts.mono,
+    fontFamily: Fonts.fontPreview,
   },
 });
