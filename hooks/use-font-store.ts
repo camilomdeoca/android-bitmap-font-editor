@@ -1,12 +1,15 @@
-import { Font, Glyph } from "@/lib/bdfparser/bdfparser";
+import { Font, font2serializable, Glyph, serializable2font, SerializableFont } from "@/lib/bdfparser/bdfparser";
 import { create } from "zustand";
 import { createMMKV } from 'react-native-mmkv';
 
 const FONT_METADATA_KEY = 'metadata';
 const SELECTED_CODEPOINT_KEY = 'selected-codepoint';
 
-let fontStorage = createMMKV({ id: 'current-font' });
-let glyphStorage = createMMKV({ id: 'current-font-glyphs' });
+const nonSelectedFontsStorage = createMMKV({ id: 'non-selected-fonts' });
+
+// Selected font storage
+const fontStorage = createMMKV({ id: 'current-font' });
+const glyphStorage = createMMKV({ id: 'current-font-glyphs' });
 
 interface FontMetadata {
   headers: any;
@@ -15,12 +18,15 @@ interface FontMetadata {
 }
 
 type State = {
+  nonSelectedFonts: SerializableFont[],
   font: Font | undefined,
   selectedCodepoint: number,
 };
 
 type Actions = {
-  setFont: (font?: Font) => void,
+  addFont: (font: Font) => void,
+  deleteFont: (idx: number) => void,
+  setSelectedFontIdx: (idx: number | undefined) => void,
   updateGlyph: (codepoint: number, glyph: Glyph) => void,
   deleteGlyph: (codepoint: number) => void,
   setSelectedCodepoint: (codepoint: number) => void,
@@ -91,6 +97,17 @@ function loadFontFromMMKV(): Font | undefined {
   return font;
 }
 
+function loadNonSelectedFontsFromMMKV(): SerializableFont[] {
+  const nonSelectedFonts: SerializableFont[] = [];
+  nonSelectedFontsStorage.getAllKeys().forEach(fontname => {
+    const text = nonSelectedFontsStorage.getString(fontname);
+    if (text === undefined) throw new Error("If its a key it should have a value");
+    const serializableFont = JSON.parse(text);
+    nonSelectedFonts.push(serializableFont);
+  })
+  return nonSelectedFonts;
+}
+
 function switchFontInMMKV(newFont: Font | undefined): void {
   fontStorage.clearAll();
   glyphStorage.clearAll();
@@ -104,10 +121,59 @@ function switchFontInMMKV(newFont: Font | undefined): void {
 }
 
 export const useFontStore = create<State & Actions>((set, get) => ({
+  nonSelectedFonts: loadNonSelectedFontsFromMMKV(),
   font: loadFontFromMMKV(),
   selectedCodepoint: loadSelectedCodepointFromMMKV() ?? 0,
-  setFont: (font = undefined) => {
+  addFont: (font: Font) => {
+    if (nonSelectedFontsStorage.contains(font.headers.fontname)) {
+      throw new Error("Importing two fonts with the same name isnt supported yet");
+      // TODO: Append " (n)" to the font name or something like that
+    }
+    const serializableFont = font2serializable(font);
+    nonSelectedFontsStorage.set(font.headers.fontname, JSON.stringify(serializableFont));
+    set(prev => ({ nonSelectedFonts: [...prev.nonSelectedFonts, serializableFont] }));
+  },
+  deleteFont: (idx: number) => {
+    if (idx < 0 || idx >= get().nonSelectedFonts.length) {
+      throw new Error("Index out of range");
+    }
+    const serializableFont = get().nonSelectedFonts[idx];
+    nonSelectedFontsStorage.remove(serializableFont.headers.fontname);
+    set(prev => ({ nonSelectedFonts: prev.nonSelectedFonts.toSpliced(idx, 1) }));
+  },
+  setSelectedFontIdx: (idx: number | undefined) => {
+    const prevFont = get().font;
+    if (prevFont !== undefined) {
+      // Save the previously selected font into nonSelectedFonts and persist it
+      const idx = get().nonSelectedFonts
+        .findIndex(f => f.headers.fontname === prevFont.headers.fontname);
+
+      const serializablePrevFont = font2serializable(prevFont);
+
+      set(state => ({
+        nonSelectedFonts: state.nonSelectedFonts
+          .toSpliced(idx, 1, serializablePrevFont),
+      }));
+
+      nonSelectedFontsStorage.set(
+        serializablePrevFont.headers.fontname,
+        JSON.stringify(serializablePrevFont),
+      );
+    }
+
+    if (idx === undefined) {
+      set({ font: undefined });
+      switchFontInMMKV(undefined);
+      return;
+    }
+
+    if (idx < 0 || idx >= get().nonSelectedFonts.length) {
+      throw new Error("Index out of range");
+    }
+
+    const font = serializable2font(get().nonSelectedFonts[idx]);
     set({ font });
+
     switchFontInMMKV(font);
   },
   updateGlyph: (codepoint: number, glyph: Glyph) => {
@@ -115,20 +181,22 @@ export const useFontStore = create<State & Actions>((set, get) => ({
     set(state => {
       if (!state.font) return state;
       const updatedFont = { ...state.font };
+      // Should recreate the map but if it has a lot of glyphs it would be slow
       updatedFont.glyphs.set(codepoint, glyph);
       return { font: updatedFont };
     });
-    
+
     saveGlyphToMMKV(codepoint, glyph);
   },
   deleteGlyph: (codepoint: number) => {
     set(state => {
       if (!state.font) return state;
       const updatedFont = { ...state.font };
+      // Should recreate the map but if it has a lot of glyphs it would be slow
       updatedFont.glyphs.delete(codepoint);
       return { font: updatedFont };
     });
-    
+
     deleteGlyphFromMMKV(codepoint);
   },
   setSelectedCodepoint: (codepoint = 0) => {

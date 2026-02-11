@@ -84,7 +84,6 @@ export default function FontEditor() {
   const [codePointInputText, setCodePointInputText] =
     useState(() => selectedCodepoint.toString(16));
 
-  const setFont = useFontStore(state => state.setFont);
   const updateGlyph = useFontStore(state => state.updateGlyph);
   const deleteGlyph = useFontStore(state => state.deleteGlyph);
   const setSelectedCodepoint = useFontStore(state => state.setSelectedCodepoint);
@@ -209,8 +208,7 @@ export default function FontEditor() {
               bitmap: char0.bitmap.map(row => [...row]),
             };
 
-            font.glyphs.set(selectedCodepoint, glyph);
-            setFont({ ...font });
+            updateGlyph(selectedCodepoint, glyph);
           }}
         >
           <IconSymbol name="plus" color={color} size={36} />
