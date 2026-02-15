@@ -199,7 +199,7 @@ export const useFontStore = create<State & Actions>((set, get) => ({
 
     deleteGlyphFromMMKV(codepoint);
   },
-  setSelectedCodepoint: (codepoint = 0) => {
+  setSelectedCodepoint: (codepoint) => {
     set({ selectedCodepoint: codepoint });
     saveSelectedCodepointToMMKV(codepoint);
   },
