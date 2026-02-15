@@ -53,10 +53,6 @@ export type Glyph = {
   bitmap: boolean[][],
 }
 
-export type CodepointRangeType = number | [number, number] | [number, number][]
-export type OrderType = -1 | 0 | 1 | 2
-export type GlyphDrawModeType = -1 | 0 | 1 | 2
-
 const PATTERN_VVECTOR_DELIMITER = '[\\s]+'
 
 export type SerializableFont = {
@@ -80,21 +76,31 @@ type ParseCtx = {
   lines: AsyncIterableIterator<string>,
 };
 
+function makeTuple2<K, V>(k: K, v: V): [K, V] {
+  return [k, v];
+}
+
 export function font2serializable(font: Font): SerializableFont {
   return {
-    headers: font.headers,
-    props: [...font.props.entries()],
-    propsComments: font.propsComments,
-    glyphs: [...font.glyphs.entries()],
+    headers: structuredClone(font.headers),
+    props: [
+      ...font.props.entries()
+        .map(([k, v]) => makeTuple2(k, structuredClone(v)))
+    ],
+    propsComments: structuredClone(font.propsComments),
+    glyphs: [
+      ...font.glyphs.entries()
+        .map(([k, v]) => makeTuple2(k, structuredClone(v)))
+    ],
   };
 }
 
 export function serializable2font(serializableFont: SerializableFont): Font {
   return {
-    headers: serializableFont.headers,
-    props: new Map(serializableFont.props),
-    propsComments: serializableFont.propsComments,
-    glyphs: new Map(serializableFont.glyphs),
+    headers: structuredClone(serializableFont.headers),
+    props: new Map(structuredClone(serializableFont.props)),
+    propsComments: structuredClone(serializableFont.propsComments),
+    glyphs: new Map(structuredClone(serializableFont.glyphs)),
   };
 }
 
@@ -299,7 +305,7 @@ async function __parse_glyph_count(font: Partial<Font>, parseCtx: ParseCtx): Pro
   await __prepare_glyphs(font, parseCtx);
 }
 
-function hexdata2bools(hexdata: string[], width: number): boolean[][] {
+export function hexdata2bools(hexdata: string[], width: number): boolean[][] {
   return hexdata.map(rowInHex => {
     let bits = [];
     
@@ -323,7 +329,7 @@ function hexdata2bools(hexdata: string[], width: number): boolean[][] {
   });
 }
 
-function bools2hexdata(bitmap: boolean[][]): string[] {
+export function bools2hexdata(bitmap: boolean[][]): string[] {
   return bitmap.map(bits => {
     let n = 0n;
     for (const bit of bits) {
@@ -467,10 +473,6 @@ function __prepare_glyphs_after(font: Partial<Font>, parseCtx: ParseCtx): void {
  * @returns String containing the font encoded as BDF
  */
 export function serializeToBDF(font: Font): string {
-  if (!font.headers) {
-    throw new Error('Font has no headers')
-  }
-
   const h = font.headers
   const lines: string[] = []
 
@@ -584,118 +586,3 @@ export function serializeToBDF(font: Font): string {
 
   return lines.join('\n');
 }
-
-/**
- * Similar to `.iterglyphs()`, except it returns an `array` of glyph codepoints instead of an `iterator` of `Glyph` objects.
- *
- * @param font  - Font with character
- * @param order  - Order
- * @param range  - Codepoint range
- *
- * @returns An iterator of the codepoints of glyphs
- */
-export function itercps(
-  font: Font,
-  order?: OrderType,
-  range?: number | [number, number] | [number, number][]
-): number[] {
-  order = order ?? 1;
-  let ret: number[];
-  const ks = [...font.glyphs.keys()];
-  switch (order) {
-    case 1:
-      ret = ks.sort((a: number, b: number): number => a - b);
-      break;
-    case 0:
-      ret = ks;
-      break;
-    case 2:
-      ret = ks.sort((a: number, b: number): number => b - a);
-      break;
-    case -1:
-      ret = ks.reverse();
-      break;
-  }
-  if (range !== undefined) {
-    const f = (cp: number): boolean => {
-      if (typeof range === 'number') {
-        return cp < range;
-      } else if (
-        Array.isArray(range) &&
-        range.length === 2 &&
-        typeof range[0] === 'number' &&
-        typeof range[1] === 'number'
-      ) {
-        return cp <= range[1] && cp >= range[0];
-      } else {
-        if (Array.isArray(range) && Array.isArray(range[0])) {
-          for (const t of range) {
-            const [t0, t1] = t as [number, number]
-            if (cp <= t1 && cp >= t0) {
-              return true;
-            }
-          }
-        }
-        return false;
-      }
-    };
-    ret = ret.filter(f);
-  }
-  return ret;
-}
-
-/**
- * Returns an iterator of all the glyphs (as `Glyph` objects) in the font (default) or in the specified codepoint range in the font, sorted by the specified order (or by the ascending codepoint order by default).
- *
- * @param font  - Font with character
- * @param order - Order
- * @param r     - Codepoint range
- *
- * @returns An iterator of glyphs as `Glyph` objects. Missing glyphs are replaced by `undefined`
- */
-export function *iterglyphs(
-  font: Font,
-  order?: OrderType,
-  r?: CodepointRangeType
-): IterableIterator<Glyph | undefined> {
-  for (const cp of itercps(font, order, r)) {
-    yield glyphbycp(font, cp)
-  }
-}
-
-/**
- * Get a glyph (as Glyph Object) by its codepoint.
- *
- * @param font      - Font with character
- * @param codepoint - Codepoint
- *
- * @returns `Glyph` object, or `undefined` if the glyph does not exist in the font
- */
-export function glyphbycp(font: Font, codepoint: number): Glyph | undefined {
-  const glyph = font.glyphs.get(codepoint);
-
-  if (!glyph) {
-    console.warn(
-      `Glyph "${String.fromCodePoint(
-        codepoint
-      )}" (codepoint ${codepoint.toString()}) does not exist in the font. Will return 'null'`
-    );
-    return;
-  } else {
-    return glyph;
-  }
-}
-
-/**
- * Get a glyph (as `Glyph` object) by its character.
- *
- * @param font      - Font with character
- * @param character - Character
- *
- * @returns `Glyph` object, or `undefined` if the glyph does not exist in the font
- */
-export function glyph(font: Font, character: string): Glyph | undefined {
-  const ret = character.codePointAt(0);
-  return ret !== undefined ? glyphbycp(font, ret) : undefined;
-}
-
