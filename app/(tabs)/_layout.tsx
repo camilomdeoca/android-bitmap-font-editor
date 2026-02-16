@@ -5,6 +5,7 @@ import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { CustomStatusBar } from "@/components/custom-status-bar";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -15,7 +16,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+      tabBar={(props) => <CustomStatusBar {...props} />}
+    >
       <Tabs.Screen
         name="index"
         options={{
