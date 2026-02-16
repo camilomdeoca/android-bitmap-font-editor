@@ -10,6 +10,7 @@
 */
 import {
   Font,
+  SerializableFont,
   Glyph,
   Headers,
   serializeToBDF,
@@ -20,6 +21,7 @@ import {
 
 export {
   Font,
+  SerializableFont,
   Glyph,
   Headers,
   serializeToBDF,

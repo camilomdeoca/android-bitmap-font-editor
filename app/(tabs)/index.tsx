@@ -1,14 +1,14 @@
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { useThemeColor } from "@/hooks/use-theme-color";
-import { Fonts } from "@/constants/theme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import * as DocumentPicker from "expo-document-picker"
 import {  load_font } from "@/lib/bdfparser";
 import { useFontStore } from "@/hooks/use-font-store";
 import { ButtonContainer } from "@/components/ui/button-container";
+import { BitmapText } from "@/components/ui/bitmap-text";
 
 async function* linesFromString(text: string) {
   const lines = text.split(/\r?\n/)
@@ -61,9 +61,11 @@ export default function ProjectsListScreen() {
         >
           <View style={{ flexDirection: "column", flex: 1 }}>
             <ThemedText style={{ color }} >{font.headers.fontname}</ThemedText>
-            <ThemedText style={styles.fontPreview} numberOfLines={1}>
-              The quick brown fox jumps over the lazy dog
-            </ThemedText>
+            <BitmapText
+              style={{ width: "100%" }}
+              text="The quick brown fox jumps over the lazy dog"
+              font={font}
+            />
           </View>
           <ButtonContainer onPress={() => deleteFont(i)}>
             <IconSymbol name="trash.fill" color={color} />
@@ -77,9 +79,3 @@ export default function ProjectsListScreen() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  fontPreview: {
-    fontFamily: Fonts.fontPreview,
-  },
-});

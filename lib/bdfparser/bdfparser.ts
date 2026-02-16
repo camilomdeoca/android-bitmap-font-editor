@@ -84,13 +84,17 @@ export function font2serializable(font: Font): SerializableFont {
   return {
     headers: structuredClone(font.headers),
     props: [
-      ...font.props.entries()
-        .map(([k, v]) => makeTuple2(k, structuredClone(v)))
+      ...(
+        Array.from(font.props.entries())
+          .map(([k, v]) => makeTuple2(k, structuredClone(v)))
+      )
     ],
     propsComments: structuredClone(font.propsComments),
     glyphs: [
-      ...font.glyphs.entries()
-        .map(([k, v]) => makeTuple2(k, structuredClone(v)))
+      ...(
+        Array.from(font.glyphs.entries())
+          .map(([k, v]) => makeTuple2(k, structuredClone(v)))
+      )
     ],
   };
 }
