@@ -1,6 +1,6 @@
 import { Font, font2serializable, Glyph, serializable2font, SerializableFont } from "@/lib/bdfparser/bdfparser";
 import { create } from "zustand";
-import { createMMKV } from 'react-native-mmkv';
+import { createMMKV, MMKV } from 'react-native-mmkv';
 
 const FONT_METADATA_KEY = 'metadata';
 const SELECTED_CODEPOINT_KEY = 'selected-codepoint';
@@ -10,6 +10,8 @@ const nonSelectedFontsStorage = createMMKV({ id: 'non-selected-fonts' });
 // Selected font storage
 const fontStorage = createMMKV({ id: 'current-font' });
 const glyphStorage = createMMKV({ id: 'current-font-glyphs' });
+const undoStorage = createMMKV({ id: "current-font-undo" });
+const redoStorage = createMMKV({ id: "current-font-redo" });
 
 interface FontMetadata {
   headers: any;
@@ -17,10 +19,21 @@ interface FontMetadata {
   propsComments: string[];
 }
 
+type EditOperation = {
+  codepoint: number,
+  newValue: boolean,
+  affected: [number, number][],
+};
+
 type State = {
   nonSelectedFonts: SerializableFont[],
   font: Font | undefined,
   selectedCodepoint: number,
+
+  undoStack: EditOperation[],
+  redoStack: EditOperation[],
+
+  ongoingOperation: EditOperation | undefined,
 };
 
 type Actions = {
@@ -30,7 +43,44 @@ type Actions = {
   updateGlyph: (codepoint: number, glyph: Glyph) => void,
   deleteGlyph: (codepoint: number) => void,
   setSelectedCodepoint: (codepoint: number) => void,
+
+  beginOperation: (codepoint: number, newValue: boolean) => void,
+  endOperation: () => void,
+
+  undo: () => void,
+  redo: () => void,
 };
+
+function getBitmapChanges(
+  oldBitmap: boolean[][],
+  newBitmap: boolean[][],
+): [number, number][] {
+  const result: [number, number][] = [];
+  if (oldBitmap.length !== newBitmap.length)
+    throw new Error("Height changed");
+  if (oldBitmap[0].length !== newBitmap[0].length)
+    throw new Error("Width changed");
+  for (let y = 0; y < oldBitmap.length; y++) {
+    for (let x = 0; x < oldBitmap[y].length; x++) {
+      if (oldBitmap[y][x] !== newBitmap[y][x]) {
+        result.push([x, y]);
+      }
+    }
+  }
+  return result;
+}
+
+function undoChange(glyph: Glyph, change: EditOperation) {
+  for (const [x, y] of change.affected) {
+    glyph.bitmap[y][x] = !change.newValue;
+  }
+}
+
+function redoChange(glyph: Glyph, change: EditOperation) {
+  for (const [x, y] of change.affected) {
+    glyph.bitmap[y][x] = change.newValue;
+  }
+}
 
 function getGlyphHexKey(codepoint: number): string {
   return codepoint.toString(16);
@@ -120,10 +170,29 @@ function switchFontInMMKV(newFont: Font | undefined): void {
   }
 }
 
+function loadChangesStackFromMMKV(storage: MMKV): EditOperation[] {
+  const keys = storage.getAllKeys();
+  const result = Array(keys.length);
+
+  for (const key of keys) {
+    const operation = storage.getString(key);
+    if (operation === undefined) throw new Error("If its in getAllKeys() it should exist");
+    const idx = parseInt(key);
+    if (isNaN(idx) || !isFinite(idx) || idx < 0 || idx >= result.length)
+      throw new Error("Invalid index");
+    result[idx] = JSON.parse(operation);
+  }
+
+  return result;
+}
+
 export const useFontStore = create<State & Actions>((set, get) => ({
   nonSelectedFonts: loadNonSelectedFontsFromMMKV(),
   font: loadFontFromMMKV(),
   selectedCodepoint: loadSelectedCodepointFromMMKV() ?? 0,
+  undoStack: loadChangesStackFromMMKV(undoStorage),
+  redoStack: loadChangesStackFromMMKV(redoStorage),
+  ongoingOperation: undefined,
   addFont: (font: Font) => {
     if (nonSelectedFontsStorage.contains(font.headers.fontname)) {
       throw new Error("Importing two fonts with the same name isnt supported yet");
@@ -175,11 +244,38 @@ export const useFontStore = create<State & Actions>((set, get) => ({
     set({ font });
 
     switchFontInMMKV(font);
+
+    // Clear undo stack
+    undoStorage.clearAll();
+    redoStorage.clearAll();
+    set({ undoStack: [], redoStack: [], ongoingOperation: undefined });
   },
   updateGlyph: (codepoint: number, glyph: Glyph) => {
     // Update state immediately
     set(state => {
       if (!state.font) return state;
+
+      const oldGlyph = state.font.glyphs.get(codepoint);
+      if (oldGlyph) {
+        const changes = getBitmapChanges(oldGlyph.bitmap, glyph.bitmap);
+        if (changes.length !== 0) {
+          if (changes.length !== 1) throw new Error("Expected only 1 pixel change");
+
+          set(state => {
+            if (!state.ongoingOperation)
+              throw new Error("Glyph change without operation started");
+
+            return {ongoingOperation: {
+              ...state.ongoingOperation,
+              affected: [...state.ongoingOperation.affected, ...changes],
+            }};
+          })
+        }
+      } else {
+        // The glyph was just added
+        // TODO: Add a created glyph operation
+      }
+
       const updatedFont = { ...state.font };
       // Should recreate the map but if it has a lot of glyphs it would be slow
       updatedFont.glyphs.set(codepoint, glyph);
@@ -202,5 +298,105 @@ export const useFontStore = create<State & Actions>((set, get) => ({
   setSelectedCodepoint: (codepoint) => {
     set({ selectedCodepoint: codepoint });
     saveSelectedCodepointToMMKV(codepoint);
+  },
+
+  beginOperation: (codepoint: number, newValue: boolean) => set({
+    ongoingOperation: {
+      codepoint,
+      newValue,
+      affected: [],
+    },
+  }),
+  endOperation: () => {
+    // 1. Save `ongoingOperation` in undoStack
+    set(state => {
+      if (!state.ongoingOperation)
+        throw new Error("An operation needs to be started to be ended");
+      return {
+        undoStack: [...state.undoStack, state.ongoingOperation],
+        // Clear redo stack to not reapply changes
+        redoStack: [],
+      };
+    })
+    // console.log(get().ongoingOperation);
+
+    // 2. Persist to MMKV
+    undoStorage.set(`${get().undoStack.length-1}`, JSON.stringify(get().ongoingOperation));
+    
+    // Clear redo storages because those changes would be applied to a different glyph
+    redoStorage.clearAll();
+
+    // 3. Set `ongoingOperation` to undefined
+    set({ ongoingOperation: undefined });
+  },
+  undo: () => {
+    if (get().undoStack.length === 0) return;
+
+    // 1. Invert the change
+    set(state => {
+      const change = state.undoStack[state.undoStack.length-1];
+      if (!state.font) return state;
+      const updatedFont = { ...state.font };
+      // Should recreate the map but if it has a lot of glyphs it would be slow
+      const oldGlyph = state.font.glyphs.get(change.codepoint);
+      if (!oldGlyph) throw new Error("Glyph doesn't exist");
+      const newGlyph = {
+        ...oldGlyph,
+        bitmap: oldGlyph.bitmap.map(row => [...row]),
+      };
+      undoChange(newGlyph, change);
+      updatedFont.glyphs.set(change.codepoint, newGlyph);
+      return { font: updatedFont, selectedCodepoint: change.codepoint };
+    });
+
+    // 2. Move top of the undo stack to redo stack
+    set(state => {
+      const newRedoStack = [...state.redoStack, state.undoStack[state.undoStack.length-1]];
+      const newUndoStack = state.undoStack.toSpliced(state.undoStack.length-1, 1);
+
+      return {
+        redoStack: newRedoStack,
+        undoStack: newUndoStack,
+      };
+    });
+
+    // 3. Do the same in MMKV storages
+    redoStorage.set(`${get().redoStack.length-1}`, JSON.stringify(get().redoStack[get().redoStack.length-1]))
+    undoStorage.remove(`${get().undoStack.length}`);
+  },
+  redo: () => {
+    if (get().redoStack.length === 0) return;
+    
+    // 1. Reapply the change
+    set(state => {
+      const change = state.redoStack[state.redoStack.length-1];
+      if (!state.font) return state;
+      const updatedFont = { ...state.font };
+      // Should recreate the map but if it has a lot of glyphs it would be slow
+      const oldGlyph = state.font.glyphs.get(change.codepoint);
+      if (!oldGlyph) throw new Error("Glyph doesn't exist");
+      const newGlyph = {
+        ...oldGlyph,
+        bitmap: oldGlyph.bitmap.map(row => [...row]),
+      };
+      redoChange(newGlyph, change);
+      updatedFont.glyphs.set(change.codepoint, newGlyph);
+      return { font: updatedFont, selectedCodepoint: change.codepoint };
+    });
+
+    // 2. Move top of the redo stack to undo stack
+    set(state => {
+      const newUndoStack = [...state.undoStack, state.redoStack[state.redoStack.length-1]];
+      const newRedoStack = state.redoStack.toSpliced(state.redoStack.length-1, 1);
+
+      return {
+        undoStack: newUndoStack,
+        redoStack: newRedoStack,
+      };
+    });
+
+    // 3. Do the same in MMKV storages
+    undoStorage.set(`${get().undoStack.length-1}`, JSON.stringify(get().undoStack[get().undoStack.length-1]))
+    redoStorage.remove(`${get().redoStack.length}`);
   },
 }));

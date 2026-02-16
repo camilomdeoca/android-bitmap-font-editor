@@ -141,9 +141,17 @@ function renderBoundingBox(glyph: Glyph, backgroundColor: ColorValue, fontHeight
   </View>;
 }
 
+
+/**
+ * Edit the bitmap of a character
+ *
+ * @param onDragStart - a function that takes the new value for the pixels affected
+ */
 export function CharacterEditor({
   bitmap,
   onChange,
+  onDragStart,
+  onDragEnd,
   previewChar,
   glyph,
   showGrid = true,
@@ -152,6 +160,8 @@ export function CharacterEditor({
 }: {
   bitmap: boolean[][],
   onChange: (bitmap: boolean[][]) => void,
+  onDragStart?: (newValue: boolean) => void,
+  onDragEnd?: () => void,
   previewChar?: string,
   showGrid?: boolean,
   showBoundingBox?: boolean,
@@ -197,11 +207,16 @@ export function CharacterEditor({
           
           startingPixelStateRef.current = bitmap[y][x];
 
+          onDragStart?.(!startingPixelStateRef.current);
+
           const newBitmap = [...bitmap];
           newBitmap[y] = [...newBitmap[y]];
           newBitmap[y][x] = !startingPixelStateRef.current;
 
           onChange(newBitmap);
+        }}
+        onResponderEnd={() => {
+          onDragEnd?.();
         }}
         onResponderMove={ev => {
           const x = Math.floor(ev.nativeEvent.locationX * width / size.width);

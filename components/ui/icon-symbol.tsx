@@ -26,6 +26,8 @@ const MAPPING = {
   "square.and.arrow.down": "save",
   "gear": "settings",
   "trash.fill": "delete",
+  "arrow.turn.up.left": "undo",
+  "arrow.turn.up.right": "redo",
 } as IconMapping;
 
 /**

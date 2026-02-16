@@ -60,6 +60,7 @@ function canFromCodePoint(value: number): boolean {
 
 export default function FontEditor() {
   const color = useThemeColor({}, "text");
+  const colorDisabled = useThemeColor({}, "textDisabled");
   const backgroundColor = useThemeColor({}, "background");
   const borderColor = useThemeColor({}, "borderDefault");
 
@@ -87,6 +88,12 @@ export default function FontEditor() {
   const updateGlyph = useFontStore(state => state.updateGlyph);
   const deleteGlyph = useFontStore(state => state.deleteGlyph);
   const setSelectedCodepoint = useFontStore(state => state.setSelectedCodepoint);
+  const beginOperation = useFontStore(state => state.beginOperation);
+  const endOperation = useFontStore(state => state.endOperation);
+  const undo = useFontStore(state => state.undo);
+  const redo = useFontStore(state => state.redo);
+  const canUndo = useFontStore(state => state.undoStack.length > 0);
+  const canRedo = useFontStore(state => state.redoStack.length > 0);
 
   const handleGlyphNameChange = (newName: string) => {
     if (char && newName.trim() && newName.trim() !== char.glyphname) {
@@ -119,17 +126,24 @@ export default function FontEditor() {
     }
     return { charPickerOptions, charPickerOptionCodepoints };
   }, [font]);
+
   const [selectedCodepointIdx, setSelectedCodepointIdx] = useState(() => {
     const idx = charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint);
     if (idx < 0) return undefined;
     return idx;
   });
 
+  // Update other inputs when selectedCodepoint changes
   useEffect(() => {
     const idx = charPickerOptionCodepoints.findIndex(codepoint => codepoint === selectedCodepoint);
     if (idx < 0) return undefined;
     setSelectedCodepointIdx(idx);
-  }, [charPickerOptionCodepoints, font, selectedCodepoint]);
+
+    if (parseInt(codePointInputText, 16) !== selectedCodepoint)
+      setCodePointInputText(selectedCodepoint.toString(16));
+    if (charInputText.codePointAt(0) !== selectedCodepoint)
+      setCharInputText(String.fromCodePoint(selectedCodepoint));
+  }, [charInputText, charPickerOptionCodepoints, codePointInputText, font, selectedCodepoint]);
 
   const keyboardHeight = useKeyboardHeight();
 
@@ -149,9 +163,7 @@ export default function FontEditor() {
           onValueChange={idx => {
             setSelectedCodepointIdx(idx);
             const newCodePoint = charPickerOptionCodepoints[idx];
-            setCodePointInputText(newCodePoint.toString(16));
             setSelectedCodepoint(newCodePoint);
-            setCharInputText(String.fromCodePoint(newCodePoint))
           }}
           value={selectedCodepointIdx}
           placeholder="Select a character..."
@@ -214,15 +226,17 @@ export default function FontEditor() {
           <IconSymbol name="plus" color={color} size={36} />
         </ButtonContainer>
       </View>
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-        }}
-      >
+
+      {/* Bitmap editor */}
+      <View style={{
+        flex: 1,
+        alignItems: "center",
+      }}>
         {font && char && <CharacterEditor
           bitmap={char.bitmap}
           onChange={handleCharChange}
+          onDragStart={(newValue) => beginOperation(selectedCodepoint, newValue)}
+          onDragEnd={() => endOperation()}
           previewChar={overlayEnabled ? String.fromCodePoint(selectedCodepoint) : undefined}
           showGrid={gridEnabled}
           showBoundingBox={boundingBoxEnabled}
@@ -230,6 +244,8 @@ export default function FontEditor() {
           fontHeight={font.headers.pointsize}
         />}
       </View>
+
+      {/* Lower buttons */}
       {font && <View style={{ flexDirection: "row", gap: 10 }}>
         <ButtonContainer onPress={() => setGlyphSettingsOpen(true)}>
           <IconSymbol name="gear" color={color} size={28} />
@@ -243,6 +259,12 @@ export default function FontEditor() {
         }}>
           <IconSymbol name="trash.fill" color={color} size={28} />
         </ButtonContainer>}
+        <ButtonContainer onPress={() => undo()} disabled={!canUndo}>
+          <IconSymbol name="arrow.turn.up.left" color={canUndo ? color : colorDisabled} size={28} />
+        </ButtonContainer>
+        <ButtonContainer onPress={() => redo()} disabled={!canRedo}>
+          <IconSymbol name="arrow.turn.up.right" color={canRedo ? color : colorDisabled} size={28} />
+        </ButtonContainer>
       </View>}
 
       {font && char && <Modal animationType="slide" visible={glyphSettingsOpen} transparent>
