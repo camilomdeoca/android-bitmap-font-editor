@@ -1,50 +1,78 @@
-# Welcome to your Expo app 👋
+# Android Bitmap Font Editor
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A mobile application for creating and editing bitmap fonts. Built with Expo and React Native, the app handles BDF (Glyph Bitmap Distribution Format) fonts with an intuitive touch-based editor.
 
-## Get started
+![Screenshot](/screenshot.jpg)
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- **Import/Export BDF Fonts**: Load and save BDF font files from your device
+- **Touch-based Bitmap Editor**: Edit glyphs using intuitive touch gestures with drag-to-paint support
+- **Character Preview**: Preview characters with an optional overlay
+- **Grid & Bounding Box**: Toggle grid and bounding box visualization for precise editing
+- **Undo/Redo**: Full undo/redo support with persistent storage
+- **Dark/Light Theme**: Automatic theme support based on system settings
 
-2. Start the app
+## Getting Started
 
-   ```bash
-   npx expo start
-   ```
+### Prerequisites
 
-In the output, you'll find options to open the app in a
+- Node.js 18+
+- pnpm
+- Android Studio
+- Expo CLI
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Installation
 
 ```bash
-npm run reset-project
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Running the App
 
-## Learn more
+```bash
+# Run on Android
+pnpm expo run:android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Building the APK
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+cd android
+./gradlew assembleRelease
+```
 
-## Join the community
+The APK will be at `android/app/build/outputs/apk/release/app-release.apk`.
 
-Join our community of developers creating universal apps.
+## Project Structure
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+├── app/                      # Expo Router file-based routing
+│   ├── (tabs)/               # Tab navigation screens
+│   │   ├── font-editor.tsx   # Main font editing interface
+│   │   └── index.tsx         # Project/font list screen
+│   └── _layout.tsx           # Root layout
+├── components/               # Reusable UI components
+│   ├── character-editor.tsx  # Bitmap editor component
+│   ├── custom-status-bar.tsx # Custom tab bar
+│   └── ui/                   # Basic UI components
+├── hooks/                    # Custom React hooks
+│   ├── use-font-store.ts     # Font state management (Zustand)
+│   └── use-theme-color.ts    # Theme color hook
+├── lib/                      # Utility libraries
+│   └── bdfparser/            # BDF font format parser
+└── constants/                # Theme configuration
+```
+
+## Technology Stack
+
+- **Expo Router**: File-based routing
+- **React Native**: Mobile framework
+- **TypeScript**: Type-safe development
+- **Zustand**: Lightweight state management
+- **React Native MMKV**: Fast key-value storage
+- **React Native Skia**: High-performance 2D graphics
